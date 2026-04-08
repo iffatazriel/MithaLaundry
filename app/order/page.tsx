@@ -106,7 +106,9 @@ export default function NewOrderPage() {
           {/* Select Services */}
           <div className="bg-white rounded-xl border border-gray-100 p-5">
             <h2 className="flex items-center gap-2 text-[15px] font-semibold text-blue-700 mb-5">
-              <span>⚙️</span>
+              <span>
+                <Image src="icons/services.svg" alt="Service Icon" width={25} height={25} />
+              </span>
               Select Services
             </h2>
             <div className="grid grid-cols-2 gap-3">
@@ -127,9 +129,20 @@ export default function NewOrderPage() {
                         <span className="text-white text-[10px]">✓</span>
                       </div>
                     )}
-                    <div className="w-8 h-8 bg-gray-100 rounded-lg mb-3 flex items-center justify-center text-base">
-                      {service.id === 'cuci-setrika' ? '👕' : service.id === 'setrika' ? '♨️' : service.id === 'cuci-sepatu' ? '👟' : '🛏️'}
+                   <div className="w-8 h-8 bg-gray-100 rounded-lg mb-3 flex items-center justify-center flex-shrink-0">
+                      <Image 
+                        src={
+                          service.id === 'cuci-setrika' ? '/icons/hanger.svg' : 
+                          service.id === 'setrika' ? 'icons/setrika.svg' : 
+                          service.id === 'cuci-sepatu' ? 'icons/cantelan.svg' : 
+                          'icons/bed.svg'
+                        } 
+                        alt={service.id} 
+                        width={20} 
+                        height={20} 
+                      />
                     </div>
+
                     <p className="text-sm font-semibold text-gray-900 mb-0.5">{service.name}</p>
                     <p className="text-xs text-gray-400 mb-3">{service.description}</p>
                     <div className="flex items-center justify-between">
@@ -222,7 +235,7 @@ export default function NewOrderPage() {
           </div>
 
           {/* Order Summary */}
-          <div className="bg-gray-900 rounded-xl p-5 text-white">
+          <div className="bg-[#e0e3e5] rounded-xl p-5 text-black">
             <h2 className="text-[15px] font-semibold mb-4">Order Summary</h2>
             <div className="space-y-2 mb-4">
               {selectedServices.length === 0 ? (
@@ -230,7 +243,7 @@ export default function NewOrderPage() {
               ) : (
                 selectedServices.map((s) => (
                   <div key={s.id} className="flex items-center justify-between text-sm">
-                    <span className="text-gray-300">
+                    <span className="text-gray-600">
                       {s.name} ({serviceQtys[s.id]} {s.unit})
                     </span>
                     <span>{formatRupiah(s.price * serviceQtys[s.id])}</span>
@@ -238,7 +251,7 @@ export default function NewOrderPage() {
                 ))
               )}
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-300">Express Service</span>
+                <span className="text-gray-600">Express Service</span>
                 <span>{isExpress ? formatRupiah(expressCharge) : 'Rp 0'}</span>
               </div>
             </div>
@@ -264,7 +277,9 @@ export default function NewOrderPage() {
           {/* Operator Tip */}
           <div className="bg-orange-50 border border-orange-100 rounded-xl p-4">
             <div className="flex items-start gap-2">
-              <span className="text-orange-500 mt-0.5">ℹ️</span>
+              <span className="text-orange-500 mt-0.5">
+                <Image src="icons/note.svg" alt="Tip Icon" width={20} height={20} />
+              </span>
               <div>
                 <p className="text-xs font-bold text-orange-700 uppercase tracking-wide mb-1">Operator Tip</p>
                 <p className="text-xs text-orange-600 leading-relaxed">
