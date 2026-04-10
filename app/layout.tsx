@@ -9,6 +9,10 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'Mitha Laundry - Premium Service',
   description: 'Laundry management system',
+  icons: {
+    icon: '/icons/Background.svg',
+
+  },
 }
 
 export default function RootLayout({
