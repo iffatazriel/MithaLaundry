@@ -24,6 +24,12 @@ export interface Order {
   orderNumber: string
   customer: Customer
   items: OrderItem[]
+    services: {
+    name: string
+    price: number
+    quantity: number
+    subtotal: number
+  }[]
   totalAmount: number
   status: OrderStatus
   paymentMethod: PaymentMethod

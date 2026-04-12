@@ -96,9 +96,20 @@ export default function QuickOrderForm() {
             >
               <span className="inline-flex items-center text-xl">
                 {method === 'cash' ? (
-                    <Image src="icons/margin.svg" alt="Cash Icon" width={20} height={20} />
+                    <Image 
+                      src="/icons/margin.svg" 
+                      className="w-5 h-auto" // Pastikan ada h-auto
+                      width={24} 
+                      height={24} 
+                      alt="Margin icon" 
+                    />
                 ) : method === 'qris' ? (
-                    <Image src="icons/Icon.svg" alt="QRIS Icon" width={20} height={20} />
+                    <Image 
+                      src="/icons/Icon.svg" 
+                      alt="QRIS Icon" 
+                      width={20} 
+                      height={20} 
+                    />
                 ) : null}
               </span>
               {method.toUpperCase()}

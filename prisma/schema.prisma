@@ -1,0 +1,37 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Customer {
+  id          String   @id @default(uuid())
+  name        String
+  email       String   @unique
+  phone       String
+  totalOrders Int      @default(0)
+  status      String
+  orders      Order[]
+}
+
+model Order {
+  id           String   @id @default(cuid())
+  customerId   String
+  customer     Customer @relation(fields: [customerId], references: [id])
+
+  status String @default("pending")
+
+  services     Json
+  payment      String
+  itemCount    Int?
+  deliveryDate DateTime?
+  isExpress    Boolean  @default(false)
+
+  subtotal     Int
+  expressFee   Int
+  total        Int
+
+  createdAt    DateTime @default(now())
+}

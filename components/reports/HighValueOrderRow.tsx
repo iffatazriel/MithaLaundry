@@ -45,7 +45,7 @@ export default function HighValueOrdersRow({ order }: HighValueOrdersRowProps) {
               {order.customerName}
             </p>
             <p className="text-xs text-gray-500">
-              {order.id}
+              {order.id}    
             </p>
           </div>
         </div>

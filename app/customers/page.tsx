@@ -1,13 +1,14 @@
 'use client';
  
 import { useState } from 'react';
+import { Customer } from '@/lib/types/customers';
 import { useCustomers } from '@/lib/hooks/useCustomers';
 import CustomersHeader from '@/components/customers/CustomersHeader';
 import CustomerStats from '@/components/customers/CustomerStats';
 import CustomerSearch from '@/components/customers/CustomerSearch';
 import CustomerTable from '@/components/customers/CustomerTable';
 import AddCustomerModal from '@/components/customers/AddCustomerModal';
- 
+
 export default function CustomersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const {
@@ -36,8 +37,8 @@ export default function CustomersPage() {
       <AddCustomerModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSubmit={(customer) => {
-          addCustomer({ ...customer, id: Date.now().toString() });
+        onCustomerCreated={(customer: Customer) => {
+          addCustomer(customer);
           setIsModalOpen(false);
         }}
       />

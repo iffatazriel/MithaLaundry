@@ -1,9 +1,60 @@
+"use client"
+
+import { useState, useEffect } from 'react'
 import StatsCards from '@/components/dashboard/StatsCards'
 import QuickOrderForm from '@/components/dashboard/QuickOrderForm'
 import RecentOrders from '@/components/dashboard/RecentOrders'
 import { DASHBOARD_STATS, RECENT_ORDERS } from '@/lib/data'
 
 export default function DashboardPage() {
+
+//   const [stats, setStats] = useState({
+//   orders: 0,
+//   revenue: 0,
+//   pipeline: {
+//     pending: 0,
+//     process: 0,
+//     done: 0
+//   }
+// })
+
+  const [orders, setOrders] = useState([])
+  const [stats, setStats] = useState<any>(null)
+
+  useEffect(() => {
+    fetchDashboard()
+  }, [])
+
+  const fetchDashboard = async () => {
+    const res = await fetch('/api/orders')
+    const data = await res.json()
+
+    setOrders(data)
+
+    // generate stats
+    const today = new Date().toDateString()
+
+    const todayOrders = data.filter(
+      (o: any) =>
+        new Date(o.createdAt).toDateString() === today
+    )
+
+    const revenue = todayOrders.reduce(
+      (sum: number, o: any) => sum + o.total,
+      0
+    )
+
+    setStats({
+      orders: todayOrders.length,
+      revenue,
+      pipeline: {
+        pending: data.filter((o: any) => o.status === 'pending').length,
+        process: data.filter((o: any) => o.status === 'process').length,
+        done: data.filter((o: any) => o.status === 'done').length,
+      },
+    })
+  }
+
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -20,12 +71,17 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <StatsCards stats={DASHBOARD_STATS} />
+      {stats && <StatsCards stats={stats} />}
 
       {/* Bottom Grid */}
       <div className="grid grid-cols-[320px_1fr] gap-4">
         <QuickOrderForm />
-        <RecentOrders orders={RECENT_ORDERS} pipeline={DASHBOARD_STATS.pipeline} />
+          {stats && (
+            <RecentOrders 
+              orders={orders.slice(0,5)} 
+              pipeline={stats.pipeline}
+            />
+          )}
       </div>
     </div>
   )
