@@ -1,20 +1,57 @@
 import Link from 'next/link'
 import StatusBadge from '@/components/ui/StatusBadge'
 import type { Order, DashboardStats } from '@/types'
+import { useState, useEffect } from "react"
 
 interface RecentOrdersProps {
   orders: Order[]
   pipeline: DashboardStats['pipeline']
 }
 
+
 const PIPELINE_STAGES = [
   { key: 'sorting', label: 'Sorting', color: 'bg-gray-700'  },
   { key: 'washing', label: 'Washing', color: 'bg-blue-800'  },
   { key: 'ironing', label: 'Ironing', color: 'bg-gray-500'  },
   { key: 'ready',   label: 'Ready',   color: 'bg-gray-400'  },
+  { key: 'completed', label: 'Completed', color: 'bg-green-500' },
 ] as const
 
 export default function RecentOrders({ orders, pipeline }: RecentOrdersProps) {
+
+
+  
+    const [localOrders, setLocalOrders] = useState(orders)
+
+    useEffect(() => {
+      setLocalOrders(orders)
+    }, [orders])
+
+ 
+    const updateStatus = async (id: string, status: string) => {
+      try {
+        const res = await fetch(`/api/orders/${id}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status }),
+        })
+
+        const updated = await res.json()
+
+        // update UI tanpa reload
+        setLocalOrders((prev: any) =>
+          prev.map((order: any) =>
+            order.id === id ? { ...order, status } : order
+          )
+        )
+
+      } catch (error) {
+        console.error(error)
+      }
+    }
+
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-5">
 
@@ -43,7 +80,7 @@ export default function RecentOrders({ orders, pipeline }: RecentOrdersProps) {
 
         <tbody>
 
-        {orders.map((order) => {
+        {localOrders.map((order) => {
 
           const services =
             typeof order.services === "string"
@@ -69,7 +106,7 @@ export default function RecentOrders({ orders, pipeline }: RecentOrdersProps) {
 
                 {/* Status */}
                 <td className="py-3 pr-4">
-                  <StatusBadge status={order.status ?? 'pending'} />
+                  <StatusBadge status={order.status ?? 'COMPLETED'} />
                 </td>
 
                 {/* Est. Completion */}
@@ -77,15 +114,28 @@ export default function RecentOrders({ orders, pipeline }: RecentOrdersProps) {
                   {order.status === 'COMPLETED' ? (
                     <span className="text-sm font-semibold text-green-600">COMPLETED</span>
                   ) : (
-                    <span className="text-sm text-gray-600">{order.estimatedCompletion}</span>
+                    <span className="text-sm text-gray-600">
+                      {new Date(order.deliveryDate).toLocaleDateString('id-ID')}
+                    </span>
                   )}
                 </td>
 
                 {/* Action */}
-                <td className="py-3">
-                  <button className="flex items-center gap-1.5 text-xs text-green-600 hover:text-green-700 font-medium whitespace-nowrap">
-                    📋 WhatsApp Invoice
-                  </button>
+                  <td className="py-3">
+                  <select
+                    value={order.status}
+                    onChange={(e) => updateStatus(order.id, e.target.value)}
+                    className="w-full px-4 py-2.5 text-xs font-medium bg-white 
+                              border border-gray-200 rounded-2xl focus:outline-none 
+                              focus:ring-2 focus:ring-indigo-500 transition-all duration-200 
+                              hover:border-gray-300 cursor-pointer"
+                  >
+                    <option value="sorting" className="text-orange-600">Sorting</option>
+                    <option value="washing" className="text-blue-600">Washing</option>
+                    <option value="ironing" className="text-purple-600">Ironing</option>
+                    <option value="ready" className="text-emerald-600">Ready</option>
+                    <option value="completed" className="text-green-600">Completed</option>
+                  </select>
                 </td>
 
               </tr>

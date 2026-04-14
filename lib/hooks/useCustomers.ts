@@ -1,6 +1,6 @@
 'use client';
  
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Customer, CustomerFilters, CustomerStats } from '@/lib/types/customers';
 import { mockCustomers, ITEMS_PER_PAGE } from '@/lib/mockData/customers';
  
@@ -12,7 +12,18 @@ export function useCustomers() {
   });
  
   const [currentPage, setCurrentPage] = useState(1);
-  const [customers, setCustomers] = useState<Customer[]>(mockCustomers);
+
+  const [customers, setCustomers] = useState<Customer[]>([]);
+
+  useEffect(() => {
+  setLoading(true);
+  fetch('/api/customers')
+    .then(res => res.json())
+    .then(data => setCustomers(data))
+    .finally(() => setLoading(false));
+}, []);
+
+
   const [loading, setLoading] = useState(false);
  
   const filteredCustomers = useMemo(() => {

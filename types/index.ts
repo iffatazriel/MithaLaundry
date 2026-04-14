@@ -32,8 +32,10 @@ export interface Order {
   }[]
   totalAmount: number
   status: OrderStatus
+  
   paymentMethod: PaymentMethod
   estimatedCompletion: string
+  deliveryDate: string
   createdAt: string
   isExpress?: boolean
   itemCount?: number
