@@ -9,31 +9,29 @@ import SelectCustomerModal from '@/components/orders/SelectCustomerModal'
 import ReceiptGenerator, { ReceiptHandle } from '@/components/ReceiptGenerator'
 
 export default function NewOrderPage() {
-
-  // ─── State ───────────────────────────────────────────────
-  const [customerName, setCustomerName]   = useState('')
+  const [customerName, setCustomerName] = useState('')
   const [customerPhone, setCustomerPhone] = useState('')
-  const [serviceQtys, setServiceQtys]     = useState<Record<ServiceType, number>>(
+  const [serviceQtys, setServiceQtys] = useState<Record<ServiceType, number>>(
     Object.fromEntries(SERVICES.map((s) => [s.id, 0])) as Record<ServiceType, number>
   )
-  const [payment, setPayment]         = useState<PaymentMethod>('cash')
-  const [itemCount, setItemCount]     = useState('')
+  const [payment, setPayment] = useState<PaymentMethod>('cash')
+  const [itemCount, setItemCount] = useState('')
   const [deliveryDate, setDeliveryDate] = useState('')
-  const [isExpress, setIsExpress]     = useState(false)
+  const [isExpress, setIsExpress] = useState(false)
 
   const [openCustomerModal, setOpenCustomerModal] = useState(false)
-  const [selectedCustomer, setSelectedCustomer]   = useState<any>(null)
-  const [currentOrder, setCurrentOrder]           = useState<any>(null)
-  const [showReceipt, setShowReceipt]             = useState(false)
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null)
+  const [currentOrder, setCurrentOrder] = useState<any>(null)
+  const [showReceipt, setShowReceipt] = useState(false)
 
-  // ─── Derived ─────────────────────────────────────────────
+  const receiptRef = useRef<ReceiptHandle>(null)
+
   const selectedServices = SERVICES.filter((s) => serviceQtys[s.id] > 0)
 
-  const subtotal      = selectedServices.reduce((sum, s) => sum + s.price * serviceQtys[s.id], 0)
+  const subtotal = selectedServices.reduce((sum, s) => sum + s.price * serviceQtys[s.id], 0)
   const expressCharge = isExpress ? 5000 : 0
-  const grandTotal    = subtotal + expressCharge
+  const grandTotal = subtotal + expressCharge
 
-  // ─── Handlers ────────────────────────────────────────────
   const updateQty = (id: ServiceType, delta: number) => {
     setServiceQtys((prev) => ({
       ...prev,
@@ -41,209 +39,172 @@ export default function NewOrderPage() {
     }))
   }
 
-const handleSubmit = async () => {
-  if (!selectedCustomer) {
-    alert('Pilih customer terlebih dahulu.')
-    return
+  const handleSubmit = async () => {
+    if (!customerName.trim()) {
+      alert('Nama customer wajib diisi.')
+      return
+    }
+
+    if (!customerPhone.trim()) {
+      alert('Nomor telepon wajib diisi.')
+      return
+    }
+
+    if (selectedServices.length === 0) {
+      alert('Pilih minimal satu layanan.')
+      return
+    }
+
+    try {
+      let activeCustomer = selectedCustomer
+
+if (!activeCustomer) {
+  const createCustomerRes = await fetch('/api/customers', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      name: customerName.trim(),
+      phone: customerPhone.trim(),
+      status: 'regular',
+    }),
+  })
+
+  const customerPayload = await createCustomerRes.json()
+  console.log('create customer payload:', customerPayload)
+
+  if (!createCustomerRes.ok) {
+    throw new Error(
+      customerPayload?.detail ||
+      customerPayload?.error ||
+      'Failed to create customer'
+    )
   }
-  if (selectedServices.length === 0) {
-    alert('Pilih minimal satu layanan.')
-    return
-  }
 
-  const order = {
-    customerId:  selectedCustomer.id,
-    services:    selectedServices.map((s) => ({
-      name:     s.name,
-      price:    s.price,
-      quantity: serviceQtys[s.id],
-      subtotal: s.price * serviceQtys[s.id],
-    })),
-    payment,
-    itemCount:   Number(itemCount),
-    deliveryDate,
-    isExpress,
-    subtotal,
-    expressFee:  expressCharge,
-    total:       grandTotal,
-  }
-
-  try {
-    
-    const imageDataUrl = await receiptRef.current?.generateImage()
-
-
-    const res  = await fetch('/api/orders', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(order),
-    })
-    console.log("Response:", res)
-    const data = await res.json()
-    console.log("Saved order data:", data)
-    const savedOrder = { ...order, id: data.id }
-
-    setCurrentOrder(savedOrder)
-
-    await sendWhatsappWithImage(savedOrder, imageDataUrl ?? null)
-
-  } catch (error) {
-    console.error('Submit error:', error)
-    alert('Gagal membuat order. Coba lagi.')
-  }
+  activeCustomer = customerPayload
+  setSelectedCustomer(customerPayload)
 }
 
-const sendWhatsappWithImage = async (order: any, imageDataUrl: string | null) => {
-  const cleanPhone = selectedCustomer.phone
-    .replace(/\D/g, '')
-    .replace(/^0+/, '62')
+      const order = {
+        customerId: activeCustomer.id,
+        services: selectedServices.map((s) => ({
+          name: s.name,
+          price: s.price,
+          quantity: serviceQtys[s.id],
+          subtotal: s.price * serviceQtys[s.id],
+        })),
+        payment,
+        itemCount: Number(itemCount),
+        deliveryDate,
+        isExpress,
+        subtotal,
+        expressFee: expressCharge,
+        total: grandTotal,
+      }
 
-  // Jika gagal generate image, fallback teks
-  if (!imageDataUrl) {
-    const msg =
-      `Halo *${selectedCustomer.name}* 👋%0A` +
-      `💰 *Total: ${formatRupiah(order.total)}*%0A` +
-      `Terima kasih telah menggunakan layanan kami ✨`
-    window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank', 'noopener,noreferrer')
-    return
-  }
+      const imageDataUrl = await receiptRef.current?.generateImage()
 
-  // Convert base64 → File
-  const byteString = atob(imageDataUrl.split(',')[1])
-  const ab         = new ArrayBuffer(byteString.length)
-  const ia         = new Uint8Array(ab)
-  for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i)
-  const blob = new Blob([ab], { type: 'image/png' })
-  const file = new File([blob], `receipt-${order.id || Date.now()}.png`, { type: 'image/png' })
-
-  if (navigator.canShare?.({ files: [file] })) {
-    try {
-      await navigator.share({
-        files: [file],
-        title: 'Struk Laundry',
-        text:  `Halo ${selectedCustomer.name}, berikut struk laundry Anda.`,
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(order),
       })
-      return
-    } catch {
-      return // user cancel
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data?.error || 'Failed to create order')
+      }
+
+      const savedOrder = { ...order, id: data.id }
+      setCurrentOrder(savedOrder)
+
+      await sendWhatsappWithImage(savedOrder, imageDataUrl ?? null, activeCustomer)
+    } catch (error) {
+      console.error('Submit error:', error)
+      alert(error instanceof Error ? error.message : 'Gagal membuat order. Coba lagi.')
     }
   }
 
-  try {
-    await navigator.clipboard.write([
-      new ClipboardItem({ 'image/png': blob })
-    ])
+  const sendWhatsappWithImage = async (
+    order: any,
+    imageDataUrl: string | null,
+    customerOverride?: any
+  ) => {
+    const activeCustomer = customerOverride ?? selectedCustomer
 
-    const msg =
-      `Halo *${selectedCustomer.name}* 👋%0A` +
-      `%0A` +
-      `Struk sudah disalin ke clipboard.%0A` +
-      `Silakan *paste (Ctrl+V)* gambar di sini 👇%0A` +
-      `%0A` +
-      `💰 *Total: ${formatRupiah(order.total)}*%0A` +
-      `📅 *Estimasi: ${order.deliveryDate
-        ? new Date(order.deliveryDate).toLocaleDateString('id-ID')
-        : '-'}*`
+    if (!activeCustomer) {
+      alert('Customer tidak ditemukan.')
+      return
+    }
 
-    alert('📋 Struk berhasil disalin!\nSetelah WhatsApp terbuka, tekan Ctrl+V untuk paste gambar.')
+    const cleanPhone = activeCustomer.phone
+      .replace(/\D/g, '')
+      .replace(/^0+/, '62')
 
-    setTimeout(() => {
+    if (!imageDataUrl) {
+      const msg =
+        `Halo *${activeCustomer.name}* 👋%0A` +
+        `💰 *Total: ${formatRupiah(order.total)}*%0A` +
+        `Terima kasih telah menggunakan layanan kami ✨`
       window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank', 'noopener,noreferrer')
-    }, 300)
+      return
+    }
 
-  } catch {
-    const msg =
-      `Halo *${selectedCustomer.name}* 👋%0A` +
-      `💰 *Total: ${formatRupiah(order.total)}*%0A` +
-      `Terima kasih telah menggunakan layanan kami ✨`
-    window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank', 'noopener,noreferrer')
-  }
-}
+    const byteString = atob(imageDataUrl.split(',')[1])
+    const ab = new ArrayBuffer(byteString.length)
+    const ia = new Uint8Array(ab)
+    for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i)
 
-const generateWhatsappWithReceipt = async (order: any) => {
-  const cleanPhone = selectedCustomer.phone
-    .replace(/\D/g, '')
-    .replace(/^0+/, '62')
+    const blob = new Blob([ab], { type: 'image/png' })
+    const file = new File([blob], `receipt-${order.id || Date.now()}.png`, { type: 'image/png' })
 
-  const imageDataUrl = await receiptRef.current?.generateImage()
+    if (navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: 'Struk Laundry',
+          text: `Halo ${activeCustomer.name}, berikut struk laundry Anda.`,
+        })
+        return
+      } catch {
+        return
+      }
+    }
 
-  if (!imageDataUrl) {
-    // Fallback: kirim teks biasa jika gagal generate image
-    const message =
-      `Halo *${selectedCustomer.name}* 👋%0A` +
-      `💰 *Total: ${formatRupiah(order.total)}*%0A` +
-      `Terima kasih telah menggunakan layanan kami ✨`
-    window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank', 'noopener,noreferrer')
-    return
-  }
-
-  // Convert base64 → Blob → File
-  const byteString  = atob(imageDataUrl.split(',')[1])
-  const mimeString  = imageDataUrl.split(',')[0].split(':')[1].split(';')[0]
-  const ab          = new ArrayBuffer(byteString.length)
-  const ia          = new Uint8Array(ab)
-  for (let i = 0; i < byteString.length; i++) {
-    ia[i] = byteString.charCodeAt(i)
-  }
-  const blob = new Blob([ab], { type: mimeString })
-  const file = new File([blob], `receipt-${order.id || Date.now()}.png`, { type: 'image/png' })
-
-  
-  if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try {
-      await navigator.share({
-        files: [file],
-        title: 'Struk Laundry',
-        text:  `Halo ${selectedCustomer.name}, berikut struk laundry Anda.`,
-      })
-      return
-    } catch (err) {
-      // User cancel share — tidak perlu fallback
-      console.log('Share cancelled:', err)
-      return
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': blob })
+      ])
+
+      const msg =
+        `Halo *${activeCustomer.name}* 👋%0A` +
+        `%0A` +
+        `Struk sudah disalin ke clipboard.%0A` +
+        `Silakan *paste (Ctrl+V)* gambar di sini 👇%0A` +
+        `%0A` +
+        `💰 *Total: ${formatRupiah(order.total)}*%0A` +
+        `📅 *Estimasi: ${
+          order.deliveryDate
+            ? new Date(order.deliveryDate).toLocaleDateString('id-ID')
+            : '-'
+        }*`
+
+      alert('📋 Struk berhasil disalin!\nSetelah WhatsApp terbuka, tekan Ctrl+V untuk paste gambar.')
+
+      setTimeout(() => {
+        window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank', 'noopener,noreferrer')
+      }, 300)
+    } catch {
+      const msg =
+        `Halo *${activeCustomer.name}* 👋%0A` +
+        `💰 *Total: ${formatRupiah(order.total)}*%0A` +
+        `Terima kasih telah menggunakan layanan kami ✨`
+      window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank', 'noopener,noreferrer')
     }
   }
 
-  try {
-    await navigator.clipboard.write([
-      new ClipboardItem({ 'image/png': blob })
-    ])
-
-    const message =
-      `Halo *${selectedCustomer.name}* 👋%0A` +
-      `%0A` +
-      `Struk pesanan sudah disalin ke clipboard.%0A` +
-      `Silakan *paste (Ctrl+V)* gambar di sini 👇%0A` +
-      `%0A` +
-      `💰 *Total: ${formatRupiah(order.total)}*%0A` +
-      `📅 *Estimasi: ${order.deliveryDate
-        ? new Date(order.deliveryDate).toLocaleDateString('id-ID')
-        : '-'}*%0A` +
-      `%0A` +
-      `Terima kasih ✨`
-
-    setTimeout(() => {
-      window.open(
-        `https://wa.me/${cleanPhone}?text=${message}`,
-        '_blank',
-        'noopener,noreferrer'
-      )
-    }, 300)
-
-    alert('📋 Struk berhasil disalin!\nSetelah WhatsApp terbuka, tekan Ctrl+V untuk paste gambar.')
-
-  } catch (clipboardErr) {
-    
-    console.warn('Clipboard write failed:', clipboardErr)
-    const message =
-      `Halo *${selectedCustomer.name}* 👋%0A` +
-      `💰 *Total: ${formatRupiah(order.total)}*%0A` +
-      `Terima kasih telah menggunakan layanan kami ✨`
-    window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank', 'noopener,noreferrer')
-  }
-}
-
-  // ─── Effects ─────────────────────────────────────────────
   useEffect(() => {
     if (selectedCustomer) {
       setCustomerName(selectedCustomer.name)
@@ -251,88 +212,72 @@ const generateWhatsappWithReceipt = async (order: any) => {
     }
   }, [selectedCustomer])
 
-  // ─── Service icon helper ──────────────────────────────────
   const getServiceIcon = (id: string) => {
     const map: Record<string, string> = {
       'cuci-setrika': '/icons/hanger.svg',
-      'setrika':      '/icons/setrika.svg',
-      'cuci-sepatu':  '/icons/cantelan.svg',
+      'setrika': '/icons/setrika.svg',
+      'cuci-sepatu': '/icons/cantelan.svg',
     }
     return map[id] ?? '/icons/bed.svg'
   }
 
-  const receiptRef = useRef<ReceiptHandle>(null)
-
-  // ─── Render ───────────────────────────────────────────────
   return (
     <>
-      <div className="p-7 max-w-[1100px]">
-        
-        {/* Page Header */}
-        <div className="flex items-center justify-between mb-7">
-          <h1 className="text-2xl font-bold text-gray-900">New Order</h1>
+      <div className="px-4 py-4 sm:px-6 sm:py-6 lg:px-7 lg:py-7 max-w-[1100px] mx-auto">
+        <div className="flex items-center justify-between mb-5 sm:mb-7">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">New Order</h1>
         </div>
-        {/* Receipt Banner */}
+
         {currentOrder && selectedCustomer && (
-          <div 
+          <div
             className={`
-              sticky top-4 z-20 mx-4 mb-7 p-5 rounded-2xl border shadow-lg backdrop-blur-sm
+              sticky top-3 sm:top-4 z-20 mb-5 sm:mb-7 p-4 sm:p-5 rounded-2xl border shadow-lg backdrop-blur-sm
               bg-gradient-to-r from-green-50/95 to-blue-50/95 border-green-200/80
               transition-all duration-300 ease-out
-              hover:shadow-xl hover:-translate-y-1 hover:scale-[1.02]
+              hover:shadow-xl
               group
               ${showReceipt ? 'scale-95 opacity-50' : 'scale-100 opacity-100'}
             `}
-            style={{ 
+            style={{
               boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-              transform: 'translateZ(0)' 
+              transform: 'translateZ(0)',
             }}
           >
-            <div className="flex items-center justify-between gap-4 relative overflow-hidden">
-
-              {/* Content */}
-              <div className="relative z-10">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 relative overflow-hidden">
+              <div className="relative z-10 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-ping"></div>
-                  <p className="text-sm font-bold bg-gradient-to-r from-green-700 to-blue-700 bg-clip-text text-transparent">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
+                  <p className="text-sm font-bold bg-gradient-to-r from-green-700 to-blue-700 bg-clip-text text-transparent truncate">
                     Order #{currentOrder.id?.toString().slice(-6) || 'NEW'} berhasil dibuat!
                   </p>
                 </div>
-                <p className="text-xs text-gray-600 leading-tight">
-                  Total: <span className="font-semibold text-gray-900">{formatRupiah(currentOrder.total)}</span>
+                <p className="text-xs sm:text-sm text-gray-600 leading-tight">
+                  Total:{' '}
+                  <span className="font-semibold text-gray-900">
+                    {formatRupiah(currentOrder.total)}
+                  </span>
                 </p>
               </div>
 
               <button
                 onClick={() => setShowReceipt(true)}
-                className={`
-                  shrink-0 px-5 py-2.5 bg-blue-600
-                  text-white text-sm font-bold rounded-xl shadow-lg hover:shadow-2xl
-                  transition-all duration-300 ease-out
-                  active:scale-95
-                  relative overflow-hidden
-                `}
+                className="w-full sm:w-auto shrink-0 px-4 sm:px-5 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 ease-out active:scale-95 relative overflow-hidden"
               >
-                
-                <span className="relative flex items-center gap-1.5">
+                <span className="relative flex items-center justify-center gap-1.5">
                   <Receipt className="w-4 h-4" />
                   Buat Struk
                 </span>
               </button>
             </div>
 
-            <div className="absolute bottom-2 right-2 w-20 h-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="absolute bottom-2 right-2 w-20 h-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
         )}
 
-        <div className="grid grid-cols-[1fr_280px] gap-5">
-
-          {/* ── Left Column ── */}
-          <div className="space-y-5">
-
-            {/* Customer Details */}
-            <div className="bg-white rounded-xl border border-gray-100 p-5">
-              <div className="flex items-center justify-between mb-5">
+        <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-5">
+          <div className="space-y-5 min-w-0">
+            <div className="bg-white rounded-xl border border-gray-100 p-4 sm:p-5">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
                 <h2 className="flex items-center gap-2 text-[15px] font-semibold text-blue-700">
                   <UserPlus size={17} />
                   Customer Details
@@ -340,14 +285,13 @@ const generateWhatsappWithReceipt = async (order: any) => {
                 <button
                   type="button"
                   onClick={() => setOpenCustomerModal(true)}
-                  className="text-sm text-blue-700 hover:underline"
+                  className="text-sm text-blue-700 hover:underline text-left sm:text-right"
                 >
                   Select Existing
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                {/* Full Name */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
                     Full Name
@@ -356,36 +300,54 @@ const generateWhatsappWithReceipt = async (order: any) => {
                     type="text"
                     placeholder="e.g. Budi Santoso"
                     value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
+                    onChange={(e) => {
+                      setCustomerName(e.target.value)
+                      if (selectedCustomer && e.target.value !== selectedCustomer.name) {
+                        setSelectedCustomer(null)
+                      }
+                    }}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm placeholder:text-gray-300 focus:outline-none focus:border-blue-400"
                   />
                 </div>
 
-                {/* Phone Number */}
                 <div>
                   <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
                     Phone Number
                   </label>
+                  {selectedCustomer && (
+                    <p className="mt-2 text-xs text-blue-600">
+                      Menggunakan customer terdaftar: {selectedCustomer.name}
+                    </p>
+                  )}
                   <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:border-blue-400">
-                    <span className="px-3 py-2.5 bg-gray-50 text-sm text-gray-500 border-r border-gray-200">+62</span>
+                    <span className="px-3 py-2.5 bg-gray-50 text-sm text-gray-500 border-r border-gray-200">
+                      +62
+                    </span>
                     <input
                       type="tel"
                       placeholder="812 3456 7890"
                       value={customerPhone}
-                      onChange={(e) => setCustomerPhone(e.target.value)}
-                      className="flex-1 px-3 py-2.5 text-sm placeholder:text-gray-300 outline-none"
+                      onChange={(e) => {
+                        setCustomerPhone(e.target.value)
+                        if (selectedCustomer && e.target.value !== selectedCustomer.phone) {
+                          setSelectedCustomer(null)
+                        }
+                      }}
+                      className="flex-1 min-w-0 px-3 py-2.5 text-sm placeholder:text-gray-300 outline-none"
                     />
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Select Services */}
-            <div className="bg-white rounded-xl border border-gray-100 p-5">
-              <h2 className="flex items-center gap-2 text-[15px] font-semibold text-blue-700 mb-5">
-                <Image src="/icons/services.svg" alt="Services" width={25} height={25} />
-                Select Services
-                <label className="flex items-center gap-1.5 ml-auto text-sm font-normal text-gray-600 cursor-pointer">
+            <div className="bg-white rounded-xl border border-gray-100 p-4 sm:p-5">
+              <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-5">
+                <h2 className="flex items-center gap-2 text-[15px] font-semibold text-blue-700">
+                  <Image src="/icons/services.svg" alt="Services" width={25} height={25} />
+                  Select Services
+                </h2>
+
+                <label className="flex items-center gap-1.5 lg:ml-auto text-sm font-normal text-gray-600 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={isExpress}
@@ -394,13 +356,13 @@ const generateWhatsappWithReceipt = async (order: any) => {
                   />
                   Express <span className="text-blue-600 font-semibold">(+Rp 5.000)</span>
                 </label>
-              </h2>
+              </div>
 
-              {/* Service Cards */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {SERVICES.map((service) => {
-                  const qty        = serviceQtys[service.id]
+                  const qty = serviceQtys[service.id]
                   const isSelected = qty > 0
+
                   return (
                     <div
                       key={service.id}
@@ -410,38 +372,50 @@ const generateWhatsappWithReceipt = async (order: any) => {
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
-                      {/* Checkmark badge */}
                       {isSelected && (
                         <div className="absolute top-3 right-3 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
                           <span className="text-white text-[10px]">✓</span>
                         </div>
                       )}
 
-                      {/* Icon */}
                       <div className="w-8 h-8 bg-gray-100 rounded-lg mb-3 flex items-center justify-center flex-shrink-0">
-                        <Image src={getServiceIcon(service.id)} alt={service.id} width={20} height={20} />
+                        <Image
+                          src={getServiceIcon(service.id)}
+                          alt={service.id}
+                          width={20}
+                          height={20}
+                        />
                       </div>
 
-                      <p className="text-sm font-semibold text-gray-900 mb-0.5">{service.name}</p>
-                      <p className="text-xs text-gray-400 mb-3">{service.description}</p>
+                      <p className="text-sm font-semibold text-gray-900 mb-0.5">
+                        {service.name}
+                      </p>
+                      <p className="text-xs text-gray-400 mb-3">
+                        {service.description}
+                      </p>
 
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-3">
                         <span className="text-sm font-bold text-blue-700">
                           {formatRupiah(service.price)}
-                          <span className="text-xs font-normal text-gray-400">/{service.unit}</span>
+                          <span className="text-xs font-normal text-gray-400">
+                            /{service.unit}
+                          </span>
                         </span>
 
-                        {/* Qty controls */}
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 shrink-0">
                           <button
                             onClick={() => updateQty(service.id, -0.5)}
                             className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 text-sm"
-                          >−</button>
+                          >
+                            −
+                          </button>
                           <span className="text-sm font-medium w-8 text-center">{qty}</span>
                           <button
                             onClick={() => updateQty(service.id, 0.5)}
                             className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 text-sm"
-                          >+</button>
+                          >
+                            +
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -449,8 +423,7 @@ const generateWhatsappWithReceipt = async (order: any) => {
                 })}
               </div>
 
-              {/* Item count & Delivery date */}
-              <div className="grid grid-cols-2 gap-4 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div>
                   <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
                     Jumlah Baju (Items)
@@ -464,6 +437,7 @@ const generateWhatsappWithReceipt = async (order: any) => {
                     className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm placeholder:text-gray-300 focus:outline-none focus:border-blue-400"
                   />
                 </div>
+
                 <div>
                   <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
                     Pickup / Delivery Date
@@ -479,12 +453,12 @@ const generateWhatsappWithReceipt = async (order: any) => {
             </div>
           </div>
 
-          {/* ── Right Column ── */}
-          <div className="space-y-4">
+          <div className="space-y-4 min-w-0">
+            <div className="bg-white rounded-xl border border-gray-100 p-4 sm:p-5">
+              <h2 className="text-[15px] font-semibold text-gray-900 mb-4">
+                Payment Method
+              </h2>
 
-            {/* Payment Method */}
-            <div className="bg-white rounded-xl border border-gray-100 p-5">
-              <h2 className="text-[15px] font-semibold text-gray-900 mb-4">Payment Method</h2>
               <div className="grid grid-cols-2 gap-2">
                 {(['cash', 'qris'] as const).map((method) => (
                   <button
@@ -508,8 +482,7 @@ const generateWhatsappWithReceipt = async (order: any) => {
               </div>
             </div>
 
-            {/* Order Summary */}
-            <div className="bg-[#e0e3e5] rounded-xl p-5 text-black">
+            <div className="bg-[#e0e3e5] rounded-xl p-4 sm:p-5 text-black">
               <h2 className="text-[15px] font-semibold mb-4">Order Summary</h2>
 
               <div className="space-y-2 mb-4">
@@ -517,25 +490,36 @@ const generateWhatsappWithReceipt = async (order: any) => {
                   <p className="text-sm text-gray-400">No services selected</p>
                 ) : (
                   selectedServices.map((s) => (
-                    <div key={s.id} className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">
+                    <div key={s.id} className="flex items-center justify-between gap-3 text-sm">
+                      <span className="text-gray-600 break-words">
                         {s.name} ({serviceQtys[s.id]} {s.unit})
                       </span>
-                      <span>{formatRupiah(s.price * serviceQtys[s.id])}</span>
+                      <span className="shrink-0">
+                        {formatRupiah(s.price * serviceQtys[s.id])}
+                      </span>
                     </div>
                   ))
                 )}
-                <div className="flex items-center justify-between text-sm">
+
+                <div className="flex items-center justify-between gap-3 text-sm">
                   <span className="text-gray-600">Express Service</span>
-                  <span>{isExpress ? formatRupiah(expressCharge) : 'Rp 0'}</span>
+                  <span className="shrink-0">
+                    {isExpress ? formatRupiah(expressCharge) : 'Rp 0'}
+                  </span>
                 </div>
               </div>
 
               <div className="border-t border-gray-400 pt-3 mb-4">
-                <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Grand Total</p>
-                <div className="flex items-center justify-between">
-                  <p className="text-2xl font-bold">{formatRupiah(grandTotal)}</p>
-                  <span className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded-full">PENDING</span>
+                <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+                  Grand Total
+                </p>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xl sm:text-2xl font-bold break-words">
+                    {formatRupiah(grandTotal)}
+                  </p>
+                  <span className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded-full shrink-0">
+                    PENDING
+                  </span>
                 </div>
               </div>
 
@@ -546,12 +530,12 @@ const generateWhatsappWithReceipt = async (order: any) => {
                 <ChevronRight size={14} />
                 Create Order & WhatsApp
               </button>
+
               <button className="w-full text-gray-500 hover:text-gray-700 text-sm py-2 transition-colors">
                 Save as Draft
               </button>
             </div>
 
-            {/* Operator Tip */}
             <div className="bg-orange-50 border border-orange-100 rounded-xl p-4">
               <div className="flex items-start gap-2">
                 <span className="text-orange-500 mt-0.5 shrink-0">
@@ -572,47 +556,47 @@ const generateWhatsappWithReceipt = async (order: any) => {
         </div>
       </div>
 
-      {/* ── Hidden Receipt ── */}
       <div className="fixed -left-[9999px] -top-[9999px] pointer-events-none opacity-0">
         <ReceiptGenerator
           ref={receiptRef}
           order={{
-            id:         null,
-            services:   selectedServices.map((s) => ({
-              name:     s.name,
-              price:    s.price,
+            id: null,
+            services: selectedServices.map((s) => ({
+              name: s.name,
+              price: s.price,
               quantity: serviceQtys[s.id],
               subtotal: s.price * serviceQtys[s.id],
             })),
             payment,
-            itemCount:  Number(itemCount),
+            itemCount: Number(itemCount),
             deliveryDate,
             isExpress,
             subtotal,
             expressFee: expressCharge,
-            total:      grandTotal,
+            total: grandTotal,
           }}
           customer={selectedCustomer ?? { name: '', phone: '' }}
         />
       </div>
 
-      {/* ── Select Customer Modal ── */}
       <SelectCustomerModal
         isOpen={openCustomerModal}
         onClose={() => setOpenCustomerModal(false)}
         onSelect={(customer) => setSelectedCustomer(customer)}
       />
 
-      {/* ── Receipt Modal ── */}
       {showReceipt && currentOrder && selectedCustomer && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowReceipt(false) }}
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowReceipt(false)
+          }}
         >
           <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="p-5 sticky top-0 bg-white border-b border-gray-100 z-10 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900">Digital Receipt</h2>
+            <div className="p-4 sm:p-5 sticky top-0 bg-white border-b border-gray-100 z-10 flex items-center justify-between">
+              <h2 className="text-base sm:text-lg font-bold text-gray-900">
+                Digital Receipt
+              </h2>
               <button
                 onClick={() => setShowReceipt(false)}
                 className="p-2 hover:bg-gray-100 rounded-xl transition-all"
@@ -622,7 +606,6 @@ const generateWhatsappWithReceipt = async (order: any) => {
               </button>
             </div>
 
-            {/* Receipt Content */}
             <ReceiptGenerator order={currentOrder} customer={selectedCustomer} />
           </div>
         </div>

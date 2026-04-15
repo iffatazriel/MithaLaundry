@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import StatsCards from '@/components/dashboard/StatsCards'
-import QuickOrderForm from '@/components/dashboard/QuickOrderForm'
 import RecentOrders from '@/components/dashboard/RecentOrders'
+import StatsCardsSkeleton from '@/components/dashboard/StatsCardsSkeleton'
+import RecentOrdersSkeleton from '@/components/dashboard/RecentOrdersSkeleton'
 
 export default function DashboardPage() {
-
   const [orders, setOrders] = useState([])
   const [stats, setStats] = useState<any>(null)
 
@@ -17,7 +17,6 @@ export default function DashboardPage() {
 
       setOrders(data.orders)
       setStats(data.stats)
-
     } catch (error) {
       console.error("Dashboard fetch error:", error)
     }
@@ -27,7 +26,6 @@ export default function DashboardPage() {
     fetchDashboard()
 
     const interval = setInterval(fetchDashboard, 5000)
-
     return () => clearInterval(interval)
   }, [])
 
@@ -39,24 +37,28 @@ export default function DashboardPage() {
   })
 
   return (
-    <div className="p-7">
-      {/* Header */}
-      <div className="flex items-baseline gap-3 mb-6">
+    <div className="h-full flex flex-col p-7 overflow-hidden">
+      <div className="flex items-baseline gap-3 mb-6 shrink-0">
         <h1 className="text-2xl font-bold text-gray-900">Daily Overview</h1>
         <span className="text-sm text-gray-400">{today}</span>
       </div>
 
-      {/* Stats */}
-      {stats && <StatsCards stats={stats} />}
+      <div className="shrink-0">
+        {stats ? (
+          <StatsCards stats={stats} />
+        ) : (
+          <StatsCardsSkeleton />
+        )}
+      </div>
 
-      {/* Bottom Grid */}
-      <div className="grid grid-cols-[320px_1fr] gap-4">
-        <QuickOrderForm />
-        {stats && (
-          <RecentOrders 
-            orders={orders.slice(0,5)} 
+      <div className="flex-1 mt-4 min-h-0 overflow-y-auto">
+        {stats ? (
+          <RecentOrders
+            orders={orders.slice(0, 5)}
             pipeline={stats.pipeline}
           />
+        ) : (
+          <RecentOrdersSkeleton />
         )}
       </div>
     </div>

@@ -1,33 +1,96 @@
-import { Bell, Search } from 'lucide-react'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { Bell, Search, X } from 'lucide-react'
 
 interface TopbarProps {
   placeholder?: string
+  showSearch?: boolean
+  onSearch?: (value: string) => void
+  user?: {
+    name: string
+    role: string
+    initials: string
+  }
 }
 
-export default function Topbar({ placeholder = 'Search orders, customers, or transactions...' }: TopbarProps) {
-  return (
-    <header className="bg-white border-b border-gray-100 px-7 h-14 flex items-center justify-between sticky top-0 z-10">
-      <div className="flex items-center gap-2.5 bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2 w-80">
-        <Search size={14} className="text-gray-400 flex-shrink-0" />
-        <input
-          type="text"
-          placeholder={placeholder}
-          className="bg-transparent text-sm text-gray-500 placeholder:text-gray-400 outline-none w-full"
-        />
-      </div>
+export default function Topbar({
+  placeholder = 'Search orders, customers, or transactions...',
+  showSearch = true,
+  onSearch,
+  user = {
+    name: 'Admin Mitha',
+    role: 'Shift Supervisor',
+    initials: 'AM',
+  },
+}: TopbarProps) {
+  const [query, setQuery] = useState('')
 
-      <div className="flex items-center gap-4">
-        <button className="relative text-gray-400 hover:text-gray-600">
-          <Bell size={18} />
-          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full" />
-        </button>
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <p className="text-sm font-medium text-gray-900 leading-tight">Admin Mitha</p>
-            <p className="text-[11px] text-gray-400">Shift Supervisor</p>
-          </div>
-          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-semibold">
-            AM
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      onSearch?.(query.trim())
+    }, 300)
+
+    return () => clearTimeout(timeout)
+  }, [query, onSearch])
+
+  const handleClear = () => {
+    setQuery('')
+    onSearch?.('')
+  }
+
+  return (
+    <header className="sticky top-0 z-40 h-16 border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+      <div className="flex h-full items-center justify-between gap-4 px-4 sm:px-6">
+        <div className="flex min-w-0 flex-1 items-center">
+          {showSearch ? (
+            <div className="relative w-full max-w-xl">
+              <Search
+                size={16}
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+              <input
+                type="text"
+                value={query}
+                placeholder={placeholder}
+                onChange={(e) => setQuery(e.target.value)}
+                className="h-11 w-full rounded-2xl border border-gray-200 bg-gray-50 pl-11 pr-11 text-sm text-gray-700 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100 placeholder:text-gray-400"
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+                  aria-label="Clear search"
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+          ) : (
+            <div />
+          )}
+        </div>
+
+        <div className="flex shrink-0 items-center gap-3 sm:gap-5">
+          <button
+            type="button"
+            className="relative rounded-xl p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+            aria-label="Notifications"
+          >
+            <Bell size={20} />
+            <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+          </button>
+
+          <div className="flex items-center gap-3">
+            <div className="hidden text-right sm:block">
+              <p className="text-sm font-semibold text-gray-900">{user.name}</p>
+              <p className="text-xs text-gray-500">{user.role}</p>
+            </div>
+
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-sm font-bold text-white shadow-sm">
+              {user.initials}
+            </div>
           </div>
         </div>
       </div>

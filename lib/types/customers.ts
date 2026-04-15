@@ -3,14 +3,12 @@
 export interface Customer {
   id: string;
   name: string;
-  email: string;
+  email?: string | null;
   phone: string;
-  avatar: string;
-  avatarColor: string;
+  status: string;
   totalOrders: number;
-  status: 'member' | 'guest';
-  joinDate: string;
-  totalSpent?: number;
+  avatar?: string;
+  avatarColor?: string;
 }
  
 export interface CustomerStats {
@@ -26,12 +24,15 @@ export interface CustomerFilters {
   sortBy?: 'name' | 'orders' | 'date';
 }
  
+
+
 export interface CustomerTableProps {
   customers: Customer[];
   loading: boolean;
-  error?: string;
+  error: string | null;
   currentPage: number;
   totalPages: number;
+  totalCustomers: number;
   onPageChange: (page: number) => void;
   onEdit?: (customer: Customer) => void;
   onDelete?: (customerId: string) => void;

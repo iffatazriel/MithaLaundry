@@ -9,8 +9,8 @@ datasource db {
 model Customer {
   id          String   @id @default(uuid())
   name        String
-  email       String   @unique
-  phone       String
+  email       String?  @unique
+  phone       String   @unique
   totalOrders Int      @default(0)
   status      String
   orders      Order[]
@@ -21,7 +21,7 @@ model Order {
   customerId   String
   customer     Customer @relation(fields: [customerId], references: [id])
 
-  status String @default("pending")
+  status       String   @default("pending")
 
   services     Json
   payment      String

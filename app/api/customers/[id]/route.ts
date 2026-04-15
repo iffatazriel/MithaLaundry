@@ -26,13 +26,10 @@ export async function GET(req: Request) {
     }));
 
     return NextResponse.json(formattedCustomers);
-  } catch (error: any) {
+  } catch (error) {
     console.error("GET /api/customers error:", error);
     return NextResponse.json(
-      {
-        error: "Failed to fetch customers",
-        detail: error?.message ?? "Unknown error",
-      },
+      { error: "Failed to fetch customers" },
       { status: 500 }
     );
   }
@@ -42,55 +39,44 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const name = body.name?.trim();
-    const phone = body.phone?.trim();
-    const email = body.email?.trim() || null;
-    const status = body.status?.trim() || "regular";
-
-    if (!name) {
+    if (!body.name?.trim()) {
       return NextResponse.json(
         { error: "Name is required" },
         { status: 400 }
       );
     }
 
-    if (!phone) {
+    if (!body.phone?.trim()) {
       return NextResponse.json(
         { error: "Phone is required" },
         { status: 400 }
       );
     }
 
-    const existingCustomer = await prisma.customer.findFirst({
+    const existingCustomer = await prisma.customer.findUnique({
       where: {
-        phone,
+        phone: body.phone.trim(),
       },
     });
 
     if (existingCustomer) {
-      return NextResponse.json(existingCustomer, { status: 200 });
+      return NextResponse.json(existingCustomer);
     }
 
     const customer = await prisma.customer.create({
       data: {
-        name,
-        email,
-        phone,
-        status,
+        name: body.name.trim(),
+        email: body.email?.trim() || null,
+        phone: body.phone.trim(),
+        status: body.status ?? "regular",
       },
     });
 
-    return NextResponse.json(customer, { status: 201 });
-  } catch (error: any) {
+    return NextResponse.json(customer);
+  } catch (error) {
     console.error("POST /api/customers error:", error);
-
     return NextResponse.json(
-      {
-        error: "Failed to create customer",
-        detail: error?.message ?? "Unknown error",
-        code: error?.code ?? null,
-        meta: error?.meta ?? null,
-      },
+      { error: "Failed to create customer" },
       { status: 500 }
     );
   }

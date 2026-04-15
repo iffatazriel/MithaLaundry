@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState } from "react"
-import { Search, X, ChevronRight } from "lucide-react" 
+import { useState } from 'react'
+import { Search, X, ChevronRight, UserRound } from 'lucide-react'
+import { useOrderContext } from '@/lib/context/OrderContext'
 
 interface Props {
   isOpen: boolean
@@ -9,35 +10,12 @@ interface Props {
   onSelect: (customer: any) => void
 }
 
-export default function SelectCustomerModal({
-  isOpen,
-  onClose,
-  onSelect
-}: Props) {
-  const [customers, setCustomers] = useState<any[]>([])
-  const [searchTerm, setSearchTerm] = useState("")
-  const [loading, setLoading] = useState(false)
+export default function SelectCustomerModal({ isOpen, onClose, onSelect }: Props) {
+  const [searchTerm, setSearchTerm] = useState('')
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchCustomers()
-    }
-  }, [isOpen])
+  const { customers, customersLoading } = useOrderContext()
 
-  const fetchCustomers = async () => {
-    setLoading(true)
-    try {
-      const res = await fetch('/api/customers')
-      const data = await res.json()
-      setCustomers(data)
-    } catch (error) {
-      console.error('Error fetching customers:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const filteredCustomers = customers.filter(customer =>
+  const filteredCustomers = customers.filter((customer) =>
     customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.phone.includes(searchTerm)
   )
@@ -45,100 +23,134 @@ export default function SelectCustomerModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white/90 backdrop-blur-xl w-full max-w-md mx-4 max-h-[90vh] rounded-2xl shadow-2xl border border-white/20 overflow-hidden animate-in slide-in-from-top-4 duration-300">
-        
+    <div
+      className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[2px] flex items-center justify-center p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+    >
+      <div className="w-full max-w-lg bg-white rounded-2xl border border-gray-200 shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="p-6 pb-4 border-b border-gray-100">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xl font-bold text-gray-900">
-              Select Customer
-            </h2>
+        <div className="px-5 sm:px-6 py-4 border-b border-gray-100">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">
+                Select Customer
+              </h2>
+              <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+                Pilih pelanggan yang sudah terdaftar
+              </p>
+            </div>
+
             <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-xl transition-all duration-200 group"
+              onClick={() => {
+                onClose()
+                setSearchTerm('')
+              }}
+              className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
               aria-label="Close modal"
             >
-              <X className="w-5 h-5 text-gray-500 group-hover:text-gray-700" />
+              <X className="w-5 h-5" />
             </button>
           </div>
-          
-          {/* Search Input */}
-          <div className="relative">
+
+          <div className="relative mt-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search customers..."
+              placeholder="Cari nama atau nomor telepon"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
+              className="w-full h-11 pl-10 pr-4 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
             />
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-2">
-          <div className="max-h-[500px] overflow-y-auto">
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-              </div>
-            ) : filteredCustomers.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <div className="w-16 h-16 bg-gray-100 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-                  <Search className="w-8 h-8" />
-                </div>
-                <p className="text-lg font-medium">No customers found</p>
-                <p className="text-sm mt-1">Try adjusting your search terms</p>
-              </div>
-            ) : (
-              <div className="space-y-1 p-2">
-                {filteredCustomers.map((customer) => (
-                  <button
-                    key={customer.id}
-                    onClick={() => {
-                      onSelect(customer)
-                      onClose()
-                    }}
-                    className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 group border border-transparent hover:border-blue-200 hover:shadow-sm"
+        <div className="max-h-[420px] overflow-y-auto">
+          {customersLoading ? (
+            <div className="px-5 sm:px-6 py-10">
+              <div className="space-y-3">
+                {[...Array(5)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="animate-pulse flex items-center gap-3 p-3 rounded-xl border border-gray-100"
                   >
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-200">
-                      <span className="text-white font-semibold text-sm">
-                        {customer.name.charAt(0).toUpperCase()}
-                      </span>
+                    <div className="w-10 h-10 rounded-full bg-gray-200" />
+                    <div className="flex-1">
+                      <div className="h-4 w-32 bg-gray-200 rounded mb-2" />
+                      <div className="h-3 w-24 bg-gray-100 rounded" />
                     </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 group-hover:text-blue-700 truncate">
-                        {customer.name}
-                      </p>
-                      <p className="text-sm text-gray-500 truncate">
-                        {customer.phone}
-                      </p>
-                    </div>
-                    
-                    <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                  </button>
+                  </div>
                 ))}
               </div>
-            )}
-          </div>
+            </div>
+          ) : filteredCustomers.length === 0 ? (
+            <div className="px-5 sm:px-6 py-12 text-center">
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-gray-100 flex items-center justify-center mb-3">
+                <Search className="w-5 h-5 text-gray-400" />
+              </div>
+              <p className="text-sm font-medium text-gray-900">No customers found</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Coba gunakan nama atau nomor lain
+              </p>
+            </div>
+          ) : (
+            <div className="p-2 sm:p-3">
+              {filteredCustomers.map((customer) => (
+                <button
+                  key={customer.id}
+                  onClick={() => {
+                    onSelect(customer)
+                    onClose()
+                    setSearchTerm('')
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gray-50 transition-colors text-left"
+                >
+                  <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
+                    {customer.name ? (
+                      <span className="text-sm font-semibold">
+                        {customer.name.charAt(0).toUpperCase()}
+                      </span>
+                    ) : (
+                      <UserRound className="w-4 h-4" />
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {customer.name}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {customer.phone}
+                    </p>
+                  </div>
+
+                  <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Footer */}
-        {filteredCustomers.length > 0 && (
-          <div className="px-6 pb-6 pt-4 border-t border-gray-100">
+        <div className="px-5 sm:px-6 py-4 border-t border-gray-100 bg-gray-50/70">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs sm:text-sm text-gray-500">
+              {customersLoading ? 'Loading customers...' : `${filteredCustomers.length} customer ditemukan`}
+            </p>
+
             <button
               onClick={() => {
                 onClose()
-                setSearchTerm("")
+                setSearchTerm('')
               }}
-              className="w-full py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 font-medium rounded-xl border border-gray-200 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 text-sm"
+              className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-xl bg-white hover:bg-gray-50 transition-colors"
             >
-              Cancel
+              Tutup
             </button>
           </div>
-        )}
+        </div>
       </div>
     </div>
   )
