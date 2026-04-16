@@ -22,6 +22,7 @@ const NAV_ITEMS = [
   { href: '/customers', label: 'Customers', icon: Users },
   { href: '/reports', label: 'Reports', icon: BarChart2 },
   { href: '/inventory', label: 'Inventory', icon: Package },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function Sidebar() {
@@ -124,7 +125,7 @@ export default function Sidebar() {
         {/* Bottom Section */}
         <div className="px-3 py-6 border-t border-gray-100 space-y-1">
           <Link
-            href="/settings"
+            href="/setting"
             onClick={closeMobile}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all ${
               isCollapsed ? 'justify-center' : ''

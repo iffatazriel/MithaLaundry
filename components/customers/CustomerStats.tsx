@@ -1,5 +1,6 @@
 'use client';
  
+import { ArrowUpRight, ShieldCheck, UserRound, Users } from 'lucide-react';
 import { CustomerStats as CustomerStatsType } from '@/lib/types/customers';
  
 interface CustomerStatsProps {

@@ -80,7 +80,7 @@ export async function GET() {
       prisma.order.findMany({
         include: { customer: true },
         orderBy: { createdAt: "desc" },
-        take: 5
+        take: 12
       })
     ])
 

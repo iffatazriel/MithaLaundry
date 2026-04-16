@@ -86,7 +86,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
       const search = filters.search.toLowerCase();
       result = result.filter(c =>
         c.name.toLowerCase().includes(search) ||
-        c.email.toLowerCase().includes(search) ||
+        (c.email ?? '').toLowerCase().includes(search) ||
         c.phone.includes(search)
       );
     }
@@ -97,8 +97,6 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
 
     if (filters.sortBy === 'orders') {
       result.sort((a, b) => b.totalOrders - a.totalOrders);
-    } else if (filters.sortBy === 'date') {
-      result.sort((a, b) => new Date(b.joinDate).getTime() - new Date(a.joinDate).getTime());
     } else {
       result.sort((a, b) => a.name.localeCompare(b.name));
     }

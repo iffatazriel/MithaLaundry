@@ -1,48 +1,76 @@
 'use client';
- 
+
+import { ArrowDownUp, Download, Search, SlidersHorizontal } from 'lucide-react';
 import { CustomerFilters } from '@/lib/types/customers';
- 
+
 interface CustomerSearchProps {
   filters: CustomerFilters;
   onFilterChange: (filters: Partial<CustomerFilters>) => void;
   onExport?: () => void;
 }
- 
+
 export default function CustomerSearch({
   filters,
   onFilterChange,
   onExport
 }: CustomerSearchProps) {
   return (
-    <div className="mb-6">
-      <div className="flex items-center gap-4">
-        <input
-          type="text"
-          placeholder="Search customers..."
-          value={filters.search}
-          onChange={(e) => onFilterChange({ search: e.target.value })}
-          className="flex-1 px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-        />
- 
-        <button className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 016 0v12a1 1 0 01-6 0V4z" />
-          </svg>
-          <span className="text-sm font-medium">Filter</span>
-        </button>
- 
+    <div className="mb-6 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-1 flex-col gap-3 lg:flex-row">
+          <label className="flex flex-1 items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+            <Search size={18} className="text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search customers..."
+              value={filters.search}
+              onChange={(e) => onFilterChange({ search: e.target.value })}
+              className="w-full bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-400"
+            />
+          </label>
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <label className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-600">
+              <SlidersHorizontal size={16} className="text-gray-400" />
+              <select
+                value={filters.status ?? 'all'}
+                onChange={(e) =>
+                  onFilterChange({ status: e.target.value as CustomerFilters['status'] })
+                }
+                className="bg-transparent outline-none"
+              >
+                <option value="all">All Status</option>
+                <option value="member">Member</option>
+                <option value="guest">Guest</option>
+              </select>
+            </label>
+
+            <label className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-600">
+              <ArrowDownUp size={16} className="text-gray-400" />
+              <select
+                value={filters.sortBy ?? 'name'}
+                onChange={(e) =>
+                  onFilterChange({ sortBy: e.target.value as CustomerFilters['sortBy'] })
+                }
+                className="bg-transparent outline-none"
+              >
+                <option value="name">Sort by Name</option>
+                <option value="orders">Sort by Orders</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
         {onExport && (
           <button
             onClick={onExport}
-            className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            className="inline-flex items-center gap-2 self-start rounded-xl border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            <span className="text-sm font-medium">Export</span>
+            <Download size={16} />
+            Export
           </button>
         )}
       </div>
     </div>
   );
-}   
+}

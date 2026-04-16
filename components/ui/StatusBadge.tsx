@@ -13,9 +13,11 @@ interface StatusBadgeProps {
 }
 
 export default function StatusBadge({ status }: StatusBadgeProps) {
+  const normalizedStatus = status.toUpperCase() as OrderStatus
+
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold tracking-wide ${STATUS_STYLES[status]}`}>
-      {status}
+    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide ${STATUS_STYLES[normalizedStatus]}`}>
+      {normalizedStatus}
     </span>
   )
 }
