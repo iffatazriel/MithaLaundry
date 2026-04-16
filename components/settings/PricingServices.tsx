@@ -157,7 +157,7 @@ export default function PricingServices() {
 
       {/* Add Service Form */}
       {showAddForm && (
-        <div className="mb-4 p-4 border border-blue-100 bg-blue-50/40 rounded-xl">
+        <div className="mb-4 p-4 border border-blue-300 bg-blue-50/40 rounded-xl">
           <p className="text-xs font-semibold uppercase tracking-wide text-blue-600 mb-3">New Service</p>
           <ServiceForm form={form} onChange={handleFormChange} />
           <div className="flex gap-2 mt-3">

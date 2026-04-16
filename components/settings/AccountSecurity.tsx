@@ -128,7 +128,7 @@ export default function AccountSecurity() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+      <div className="flex items-center justify-between pt-4 pb-3">
         <button
           onClick={() => { setShowPasswordForm(!showPasswordForm); setPasswordError(''); }}
           className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition"
@@ -151,7 +151,7 @@ export default function AccountSecurity() {
 
       {/* Password Form */}
       {showPasswordForm && (
-        <div className="mt-5 p-4 bg-gray-50 border border-gray-100 rounded-xl">
+        <div className="mt-5 p-6 bg-gray-50 border border-gray-100 rounded-xl">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-4">Change Password</p>
           <div className="grid grid-cols-1 gap-3 mb-3">
             {(
