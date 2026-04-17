@@ -1,9 +1,16 @@
 import { prisma } from '@/lib/prisma'
+import { requireApiSession } from '@/lib/auth/server'
 import { NextResponse } from 'next/server'
 
 // GET Orders
 export async function GET() {
   try {
+    const session = await requireApiSession()
+
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const orders = await prisma.order.findMany({
       include: {
         customer: true,
@@ -27,6 +34,12 @@ export async function GET() {
 // POST Orders
 export async function POST(req: Request) {
   try {
+    const session = await requireApiSession()
+
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await req.json()
 
     const order = await prisma.order.create({
