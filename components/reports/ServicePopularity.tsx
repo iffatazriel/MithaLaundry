@@ -12,8 +12,8 @@ interface ServicePopularityProps {
 
 export default function ServicePopularity({ data, insight }: ServicePopularityProps) {
   return (
-    <div className="grid grid-cols-3 gap-6 mb-8">
-      <div className="col-span-2 bg-white p-6 rounded-lg border border-gray-200">
+    <div className="mb-8 grid gap-6 xl:grid-cols-3">
+      <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 xl:col-span-2">
         <h3 className="text-lg font-semibold text-gray-900 mb-2">
           Service Popularity
         </h3>
@@ -44,7 +44,7 @@ export default function ServicePopularity({ data, insight }: ServicePopularityPr
       </div>
 
       {insight && (
-        <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 sm:p-6">
           <div className="flex gap-4">
             <div className="flex-shrink-0">
               <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

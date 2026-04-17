@@ -1,18 +1,96 @@
 import { prisma } from '@/lib/prisma'
+import { requireApiSession } from '@/lib/auth/server'
 import { NextResponse } from 'next/server'
+import type { DashboardPeriod } from '@/types'
 
-export async function GET() {
+const PERIOD_CONFIG: Record<
+  DashboardPeriod,
+  { revenueLabel: string; comparisonLabel: string }
+> = {
+  today: {
+    revenueLabel: 'Total Revenue Today',
+    comparisonLabel: 'vs yesterday',
+  },
+  week: {
+    revenueLabel: 'Total Revenue This Week',
+    comparisonLabel: 'vs last week',
+  },
+  month: {
+    revenueLabel: 'Total Revenue This Month',
+    comparisonLabel: 'vs last month',
+  },
+  year: {
+    revenueLabel: 'Total Revenue This Year',
+    comparisonLabel: 'vs last year',
+  },
+}
+
+function resolvePeriodBounds(period: DashboardPeriod) {
+  const now = new Date()
+  const currentStart = new Date(now)
+  const previousStart = new Date(now)
+  const previousEnd = new Date(now)
+
+  if (period === 'today') {
+    currentStart.setHours(0, 0, 0, 0)
+    previousStart.setTime(currentStart.getTime())
+    previousStart.setDate(previousStart.getDate() - 1)
+    previousEnd.setTime(currentStart.getTime())
+  } else if (period === 'week') {
+    const day = currentStart.getDay()
+    const distanceFromMonday = (day + 6) % 7
+
+    currentStart.setHours(0, 0, 0, 0)
+    currentStart.setDate(currentStart.getDate() - distanceFromMonday)
+
+    previousStart.setTime(currentStart.getTime())
+    previousStart.setDate(previousStart.getDate() - 7)
+
+    previousEnd.setTime(currentStart.getTime())
+  } else if (period === 'month') {
+    currentStart.setHours(0, 0, 0, 0)
+    currentStart.setDate(1)
+
+    previousStart.setTime(currentStart.getTime())
+    previousStart.setMonth(previousStart.getMonth() - 1)
+
+    previousEnd.setTime(currentStart.getTime())
+  } else {
+    currentStart.setHours(0, 0, 0, 0)
+    currentStart.setMonth(0, 1)
+
+    previousStart.setTime(currentStart.getTime())
+    previousStart.setFullYear(previousStart.getFullYear() - 1)
+
+    previousEnd.setTime(currentStart.getTime())
+  }
+
+  return { currentStart, previousStart, previousEnd }
+}
+
+export async function GET(req: Request) {
   try {
+    const session = await requireApiSession()
 
-    const today = new Date()
-    today.setHours(0,0,0,0)
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-    const yesterday = new Date(today)
-    yesterday.setDate(yesterday.getDate() - 1)
+    const { searchParams } = new URL(req.url)
+    const requestedPeriod = searchParams.get('period')
+    const period: DashboardPeriod =
+      requestedPeriod === 'week' ||
+      requestedPeriod === 'month' ||
+      requestedPeriod === 'year'
+        ? requestedPeriod
+        : 'today'
+
+    const { currentStart, previousStart, previousEnd } = resolvePeriodBounds(period)
+    const { revenueLabel, comparisonLabel } = PERIOD_CONFIG[period]
 
     const [
-      revenueToday,
-      revenueYesterday,
+      revenueCurrentPeriod,
+      revenuePreviousPeriod,
       activeOrders,
       activeInWashing,
       pendingPickups,
@@ -28,7 +106,7 @@ export async function GET() {
       prisma.order.aggregate({
         _sum: { total: true },
         where: {
-          createdAt: { gte: today },
+          createdAt: { gte: currentStart },
           status: { in: ["ready", "completed"] }
         }
       }),
@@ -38,8 +116,8 @@ export async function GET() {
         _sum: { total: true },
         where: {
           createdAt: {
-            gte: yesterday,
-            lt: today
+            gte: previousStart,
+            lt: previousEnd
           },
           status: { in: ["ready", "completed"] }
         }
@@ -84,17 +162,20 @@ export async function GET() {
       })
     ])
 
-    const todayRevenue = revenueToday._sum.total || 0
-    const yesterdayRevenue = revenueYesterday._sum.total || 0
+    const currentRevenue = revenueCurrentPeriod._sum.total || 0
+    const previousRevenue = revenuePreviousPeriod._sum.total || 0
 
-    const revenueChangePercent = yesterdayRevenue
-      ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100
+    const revenueChangePercent = previousRevenue
+      ? ((currentRevenue - previousRevenue) / previousRevenue) * 100
       : 0
 
     return NextResponse.json({
       stats: {
-        totalRevenueToday: todayRevenue,
+        totalRevenue: currentRevenue,
         revenueChangePercent: Math.round(revenueChangePercent),
+        revenueLabel,
+        comparisonLabel,
+        period,
         activeOrders,
         activeInWashing,
         pendingPickups,

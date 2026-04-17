@@ -1,8 +1,10 @@
 // lib/types/report.ts
 
+export type ReportPeriod = 'month' | 'quarter' | 'year';
+
 export interface ReportStats {
-  monthlyRevenue: number;
-  monthlyRevenueGrowth: number;
+  revenue: number;
+  revenueGrowth: number;
   totalOrders: number;
   totalOrdersGrowth: number;
   newCustomers: number;
@@ -41,6 +43,9 @@ export interface Insight {
 }
 
 export interface ReportData {
+  period: ReportPeriod;
+  periodLabel: string;
+  comparisonLabel: string;
   stats: ReportStats;
   chartData: ChartData[];
   serviceData: ServiceData[];

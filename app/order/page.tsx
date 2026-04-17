@@ -3,10 +3,47 @@
 import { useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
 import { UserPlus, ChevronRight, X, Receipt } from 'lucide-react'
-import type { ServiceType, PaymentMethod } from '@/types'
+import type { Customer, ServiceType, PaymentMethod } from '@/types'
 import { SERVICES, formatRupiah } from '@/lib/data'
 import SelectCustomerModal from '@/components/orders/SelectCustomerModal'
 import ReceiptGenerator, { ReceiptHandle } from '@/components/ReceiptGenerator'
+
+function normalizePhoneNumber(phone: string) {
+  const digitsOnly = phone.replace(/\D/g, '')
+
+  if (!digitsOnly) {
+    return ''
+  }
+
+  if (digitsOnly.startsWith('62')) {
+    return digitsOnly
+  }
+
+  return `62${digitsOnly.replace(/^0+/, '')}`
+}
+
+type OrderService = {
+  name: string
+  price: number
+  quantity: number
+  subtotal: number
+}
+
+type DraftOrder = {
+  customerId: string
+  services: OrderService[]
+  payment: PaymentMethod
+  itemCount: number
+  deliveryDate: string
+  isExpress: boolean
+  subtotal: number
+  expressFee: number
+  total: number
+}
+
+type SavedOrder = DraftOrder & {
+  id: string
+}
 
 export default function NewOrderPage() {
   const [customerName, setCustomerName] = useState('')
@@ -20,8 +57,8 @@ export default function NewOrderPage() {
   const [isExpress, setIsExpress] = useState(false)
 
   const [openCustomerModal, setOpenCustomerModal] = useState(false)
-  const [selectedCustomer, setSelectedCustomer] = useState<any>(null)
-  const [currentOrder, setCurrentOrder] = useState<any>(null)
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+  const [currentOrder, setCurrentOrder] = useState<SavedOrder | null>(null)
   const [showReceipt, setShowReceipt] = useState(false)
 
   const receiptRef = useRef<ReceiptHandle>(null)
@@ -57,6 +94,7 @@ export default function NewOrderPage() {
 
     try {
       let activeCustomer = selectedCustomer
+      const normalizedPhone = normalizePhoneNumber(customerPhone.trim())
 
 if (!activeCustomer) {
   const createCustomerRes = await fetch('/api/customers', {
@@ -66,7 +104,7 @@ if (!activeCustomer) {
     },
     body: JSON.stringify({
       name: customerName.trim(),
-      phone: customerPhone.trim(),
+      phone: normalizedPhone,
       status: 'regular',
     }),
   })
@@ -86,7 +124,11 @@ if (!activeCustomer) {
   setSelectedCustomer(customerPayload)
 }
 
-      const order = {
+      if (!activeCustomer) {
+        throw new Error('Customer tidak valid.')
+      }
+
+      const order: DraftOrder = {
         customerId: activeCustomer.id,
         services: selectedServices.map((s) => ({
           name: s.name,
@@ -128,9 +170,9 @@ if (!activeCustomer) {
   }
 
   const sendWhatsappWithImage = async (
-    order: any,
+    order: SavedOrder,
     imageDataUrl: string | null,
-    customerOverride?: any
+    customerOverride?: Customer | null
   ) => {
     const activeCustomer = customerOverride ?? selectedCustomer
 
@@ -139,9 +181,12 @@ if (!activeCustomer) {
       return
     }
 
-    const cleanPhone = activeCustomer.phone
-      .replace(/\D/g, '')
-      .replace(/^0+/, '62')
+    const cleanPhone = normalizePhoneNumber(activeCustomer.phone ?? customerPhone)
+
+    if (!cleanPhone) {
+      alert('Nomor WhatsApp customer tidak valid.')
+      return
+    }
 
     if (!imageDataUrl) {
       const msg =

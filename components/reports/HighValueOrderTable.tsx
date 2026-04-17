@@ -9,17 +9,18 @@ interface HighValueOrdersTableProps {
 
 export default function HighValueOrdersTable({ orders }: HighValueOrdersTableProps) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <h3 className="text-lg font-semibold text-gray-900">
           High-Value Orders
         </h3>
-        <a href="#" className="text-blue-600 hover:text-blue-700 font-medium text-sm">
+        <a href="#" className="text-sm font-medium text-blue-600 hover:text-blue-700">
           View All History →
         </a>
       </div>
 
-      <table className="w-full">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[720px]">
         <thead>
           <tr className="bg-gray-50 border-b border-gray-200">
             <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
@@ -44,7 +45,8 @@ export default function HighValueOrdersTable({ orders }: HighValueOrdersTablePro
             <HighValueOrdersRow key={order.id} order={order} />
           ))}
         </tbody>
-      </table>
+        </table>
+      </div>
     </div>
   );
 }

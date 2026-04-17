@@ -3,9 +3,12 @@
 import { ReportData } from "../types/report";
 
 export const mockReportData: ReportData = {
+  period: 'month',
+  periodLabel: 'This Month',
+  comparisonLabel: 'vs Last Month',
   stats: {
-    monthlyRevenue: 42800000,
-    monthlyRevenueGrowth: 12.5,
+    revenue: 42800000,
+    revenueGrowth: 12.5,
     totalOrders: 1482,
     totalOrdersGrowth: 4.2,
     newCustomers: 128,

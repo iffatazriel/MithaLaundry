@@ -141,23 +141,23 @@ export default function InventoryPage() {
   const healthyCount = INVENTORY_ITEMS.filter((item) => item.status === 'healthy').length;
 
   return (
-    <main className="flex-1 min-h-screen bg-gray-50 p-8">
+    <main className="flex-1 min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
       <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="mb-2 text-sm font-medium text-blue-600">Operations / Inventory</p>
-          <h1 className="text-3xl font-bold text-gray-900">Inventory Management</h1>
+          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Inventory Management</h1>
           <p className="mt-2 max-w-2xl text-sm text-gray-500">
             Pantau stok bahan laundry, kebutuhan restock, dan item operasional dalam satu
             tampilan yang rapi.
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-3">
-          <button className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-100">
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap">
+          <button className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-100">
             <Truck size={18} />
             Cek Pengiriman
           </button>
-          <button className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700">
+          <button className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700">
             <ShoppingBag size={18} />
             Buat Restock
           </button>
@@ -211,7 +211,7 @@ export default function InventoryPage() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+        <div className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-gray-100 sm:p-6">
           <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Daftar Persediaan</h2>
@@ -268,7 +268,7 @@ export default function InventoryPage() {
                 return (
                   <div
                     key={item.id}
-                    className="rounded-2xl border border-gray-100 p-5 transition hover:border-blue-100 hover:shadow-sm"
+                    className="rounded-2xl border border-gray-100 p-4 transition hover:border-blue-100 hover:shadow-sm sm:p-5"
                   >
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                       <div className="min-w-0">
@@ -281,7 +281,7 @@ export default function InventoryPage() {
                           </span>
                         </div>
                         <p className="text-sm text-gray-500">
-                          {item.category} • Supplier {item.supplier}
+                          {item.category} - Supplier {item.supplier}
                         </p>
                       </div>
 
@@ -342,7 +342,7 @@ export default function InventoryPage() {
         </div>
 
         <aside className="space-y-6">
-          <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+          <div className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-gray-100 sm:p-6">
             <h2 className="text-lg font-semibold text-gray-900">Restock Prioritas</h2>
             <p className="mt-1 text-sm text-gray-500">
               Item yang sebaiknya segera dipesan ulang minggu ini.
@@ -365,7 +365,7 @@ export default function InventoryPage() {
             </div>
           </div>
 
-          <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+          <div className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-gray-100 sm:p-6">
             <h2 className="text-lg font-semibold text-gray-900">Catatan Operasional</h2>
             <div className="mt-5 space-y-4">
               <div className="rounded-2xl border border-gray-100 p-4">

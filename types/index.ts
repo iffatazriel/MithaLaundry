@@ -4,6 +4,8 @@ export type ServiceType = 'cuci-setrika' | 'setrika' | 'cuci-sepatu' | 'bedcover
 
 export type PaymentMethod = 'cash' | 'qris'
 
+export type DashboardPeriod = 'today' | 'week' | 'month' | 'year'
+
 export interface Customer {
   id: string
   name: string
@@ -42,8 +44,11 @@ export interface Order {
 }
 
 export interface DashboardStats {
-  totalRevenueToday: number
+  totalRevenue: number
   revenueChangePercent: number
+  revenueLabel: string
+  comparisonLabel: string
+  period: DashboardPeriod
   activeOrders: number
   activeInWashing: number
   pendingPickups: number

@@ -7,25 +7,30 @@ interface StatsCardsProps {
 }
 
 export default function StatsCards({ stats }: StatsCardsProps) {
+  const revenueChangePrefix = stats.revenueChangePercent > 0 ? '+' : ''
+
   return (
-    <div className="grid grid-cols-[1fr_160px_160px] gap-4 mb-6">
+    <div className="mb-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px_180px]">
       {/* Revenue */}
-      <div className="bg-blue-800 rounded-xl px-6 py-5 text-white relative overflow-hidden">
+      <div className="relative overflow-hidden rounded-2xl bg-blue-800 px-5 py-5 text-white sm:px-6">
         <div className="absolute right-4 bottom-4 opacity-10">
           <div className="w-24 h-24 rounded-full border-[16px] border-white" />
         </div>
-        <p className="text-xs text-blue-200 mb-2">Total Revenue Today</p>
-        <p className="text-3xl font-bold tracking-tight mb-2">
-          {formatRupiah(stats.totalRevenueToday)}
+        <p className="text-xs text-blue-200 mb-2">{stats.revenueLabel}</p>
+        <p className="mb-2 text-2xl font-bold tracking-tight sm:text-3xl">
+          {formatRupiah(stats.totalRevenue)}
         </p>
         <div className="flex items-center gap-1.5 text-xs text-blue-200">
           <TrendingUp size={12} />
-          <span>+{stats.revenueChangePercent}% from yesterday</span>
+          <span>
+            {revenueChangePrefix}
+            {stats.revenueChangePercent}% {stats.comparisonLabel}
+          </span>
         </div>
       </div>
 
       {/* Active Orders */}
-      <div className="bg-white rounded-xl border border-gray-100 px-5 py-4">
+      <div className="rounded-2xl border border-gray-100 bg-white px-5 py-4">
         <div className="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center mb-3">
           <ClipboardList size={17} className="text-blue-700" />
         </div>
@@ -35,7 +40,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       </div>
 
       {/* Pending Pickups */}
-      <div className="bg-white rounded-xl border border-gray-100 px-5 py-4">
+      <div className="rounded-2xl border border-gray-100 bg-white px-5 py-4">
         <div className="w-9 h-9 bg-orange-50 rounded-lg flex items-center justify-center mb-3">
           <Truck size={17} className="text-orange-500" />
         </div>

@@ -1,8 +1,29 @@
 import { prisma } from "@/lib/prisma";
+import { requireApiSession } from "@/lib/auth/server";
 import { NextResponse } from "next/server";
 
-export async function GET(req: Request) {
+function normalizePhoneNumber(phone: string) {
+  const digitsOnly = phone.replace(/\D/g, "");
+
+  if (!digitsOnly) {
+    return "";
+  }
+
+  if (digitsOnly.startsWith("62")) {
+    return digitsOnly;
+  }
+
+  return `62${digitsOnly.replace(/^0+/, "")}`;
+}
+
+export async function GET() {
   try {
+    const session = await requireApiSession();
+
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const customers = await prisma.customer.findMany({
       include: {
         _count: {
@@ -26,12 +47,13 @@ export async function GET(req: Request) {
     }));
 
     return NextResponse.json(formattedCustomers);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
     console.error("GET /api/customers error:", error);
     return NextResponse.json(
       {
         error: "Failed to fetch customers",
-        detail: error?.message ?? "Unknown error",
+        detail: message,
       },
       { status: 500 }
     );
@@ -40,10 +62,16 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const session = await requireApiSession();
+
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
 
     const name = body.name?.trim();
-    const phone = body.phone?.trim();
+    const phone = normalizePhoneNumber(body.phone?.trim() ?? "");
     const email = body.email?.trim() || null;
     const status = body.status?.trim() || "regular";
 
@@ -81,15 +109,14 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(customer, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
     console.error("POST /api/customers error:", error);
 
     return NextResponse.json(
       {
         error: "Failed to create customer",
-        detail: error?.message ?? "Unknown error",
-        code: error?.code ?? null,
-        meta: error?.meta ?? null,
+        detail: message,
       },
       { status: 500 }
     );

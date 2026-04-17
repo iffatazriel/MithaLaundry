@@ -4,13 +4,13 @@
 
 import { useReports } from '@/lib/hooks/useReports';
 import ReportsHeader from '@/components/reports/ReportsHeader';
-import ReportStats from '@/components/reports/ReportsStats';
+import ReportOverviewStats from '@/components/reports/ReportOverviewStats';
 import RevenueGrowthChart from '@/components/reports/RevenueGrowthChart';
 import ServicePopularity from '@/components/reports/ServicePopularity';
 import HighValueOrdersTable from '@/components/reports/HighValueOrderTable';
 
 export default function ReportsPage() {
-  const { reportData, getChartBarHeight, maxRevenue } = useReports();
+  const { reportData, period, setPeriod, maxRevenue } = useReports();
 
   const handleExportPDF = () => {
     console.log('Exporting PDF...');
@@ -18,16 +18,25 @@ export default function ReportsPage() {
   };
 
   return (
-    <main className="flex-1 p-8 bg-gray-50 min-h-screen">
-      <ReportsHeader onExport={handleExportPDF} />
+    <main className="flex-1 min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+      <ReportsHeader
+        onExport={handleExportPDF}
+        period={period}
+        onPeriodChange={setPeriod}
+      />
       
-      <ReportStats stats={reportData.stats} />
+      <ReportOverviewStats
+        stats={reportData.stats}
+        periodLabel={reportData.periodLabel}
+        comparisonLabel={reportData.comparisonLabel}
+      />
       
-      <div className="grid grid-cols-3 gap-6 mb-8">
-        <div className="col-span-2">
+      <div className="mb-8 grid gap-6 xl:grid-cols-3">
+        <div className="xl:col-span-2">
           <RevenueGrowthChart 
             data={reportData.chartData} 
             maxRevenue={maxRevenue}
+            periodLabel={reportData.periodLabel}
           />
         </div>
       </div>

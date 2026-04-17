@@ -80,8 +80,33 @@ export default function RecentOrders({ orders, pipeline }: RecentOrdersProps) {
     0
   )
 
+  const renderCompletion = (order: Order, rawStatus: string) => {
+    if (rawStatus === 'completed') {
+      return <span className="text-sm font-semibold text-emerald-600">Completed</span>
+    }
+
+    if (!order.deliveryDate) {
+      return <span className="text-sm text-gray-500">Belum ditentukan</span>
+    }
+
+    return (
+      <div>
+        <p className="text-sm font-medium text-gray-800">
+          {new Date(order.deliveryDate).toLocaleDateString('id-ID', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+          })}
+        </p>
+        <p className="mt-1 text-xs text-gray-400">
+          Target {formatStatusLabel(rawStatus)}
+        </p>
+      </div>
+    )
+  }
+
   return (
-    <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
+    <div className="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
       <div className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">Recent Orders</h2>
@@ -110,7 +135,7 @@ export default function RecentOrders({ orders, pipeline }: RecentOrdersProps) {
           </div>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {PIPELINE_STAGES.map(({ key, label, color, icon: Icon }) => {
             const value = pipeline?.[key] ?? 0
             const width = totalPipeline > 0 ? (value / totalPipeline) * 100 : 0
@@ -139,7 +164,83 @@ export default function RecentOrders({ orders, pipeline }: RecentOrdersProps) {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-100">
+      <div className="space-y-3 md:hidden">
+        {paginatedOrders.length === 0 ? (
+          <div className="rounded-2xl border border-gray-100 px-4 py-12 text-center">
+            <p className="text-base font-semibold text-gray-700">Belum ada order terbaru</p>
+            <p className="mt-2 text-sm text-gray-500">
+              Order yang masuk akan langsung muncul di dashboard ini.
+            </p>
+          </div>
+        ) : (
+          paginatedOrders.map((order) => {
+            const services =
+              typeof order.services === 'string'
+                ? JSON.parse(order.services)
+                : order.services
+
+            const firstService = services?.[0]
+            const serviceCount = Array.isArray(services) ? services.length : 0
+            const normalizedStatus = normalizeStatus(order.status)
+            const rawStatus = order.status?.toLowerCase() ?? 'completed'
+
+            return (
+              <div key={order.id} className="rounded-2xl border border-gray-100 p-4">
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900">
+                      {order.customer?.name ?? 'Walk-in Customer'}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-400">#{order.id.slice(0, 6)}</p>
+                  </div>
+                  <StatusBadge status={normalizedStatus} />
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
+                      Service
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-gray-800">
+                      {firstService?.name ?? 'No Service'}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-400">
+                      {firstService?.quantity ?? 0} item
+                      {serviceCount > 1 ? ` + ${serviceCount - 1} layanan lain` : ''}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
+                      Completion
+                    </p>
+                    <div className="mt-1">{renderCompletion(order, rawStatus)}</div>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
+                      Update Status
+                    </p>
+                    <select
+                      value={rawStatus}
+                      onChange={(e) => updateStatus(order.id, e.target.value)}
+                      className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {STATUS_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )
+          })
+        )}
+      </div>
+
+      <div className="hidden overflow-hidden rounded-2xl border border-gray-100 md:block">
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead className="bg-gray-50">
@@ -223,7 +324,7 @@ export default function RecentOrders({ orders, pipeline }: RecentOrdersProps) {
                         <select
                           value={rawStatus}
                           onChange={(e) => updateStatus(order.id, e.target.value)}
-                          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full text-center rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                           {STATUS_OPTIONS.map((option) => (
                             <option key={option.value} value={option.value}>
@@ -248,7 +349,7 @@ export default function RecentOrders({ orders, pipeline }: RecentOrdersProps) {
             : `Showing ${startIndex + 1} - ${Math.min(endIndex, localOrders.length)} of ${localOrders.length} orders`}
         </p>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           <button
             onClick={() => setCurrentPage((prev) => prev - 1)}
             disabled={currentPage === 1}
