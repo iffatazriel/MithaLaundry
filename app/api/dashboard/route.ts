@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/prisma'
-import { requireApiSession } from '@/lib/auth/server'
 import { NextResponse } from 'next/server'
 import type { DashboardPeriod } from '@/types'
 
@@ -70,12 +69,6 @@ function resolvePeriodBounds(period: DashboardPeriod) {
 
 export async function GET(req: Request) {
   try {
-    const session = await requireApiSession()
-
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const { searchParams } = new URL(req.url)
     const requestedPeriod = searchParams.get('period')
     const period: DashboardPeriod =

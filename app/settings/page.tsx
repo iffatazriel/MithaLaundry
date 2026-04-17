@@ -1,5 +1,4 @@
 import { SERVICES, formatRupiah } from '@/lib/data'
-import { getCurrentUser, requireSession } from '@/lib/auth/server'
 import { prisma } from '@/lib/prisma'
 import SettingsPageClient from '@/components/settings/SettingsPageClient'
 
@@ -12,24 +11,20 @@ function formatRole(role: string) {
 }
 
 export default async function SettingsPage() {
-  await requireSession()
-
-  const [currentUser, customerCount, orderCount, readyPickupCount, expressOrderCount] =
-    await Promise.all([
-      getCurrentUser(),
-      prisma.customer.count(),
-      prisma.order.count(),
-      prisma.order.count({
-        where: {
-          status: 'ready',
-        },
-      }),
-      prisma.order.count({
-        where: {
-          isExpress: true,
-        },
-      }),
-    ])
+  const [customerCount, orderCount, readyPickupCount, expressOrderCount] = await Promise.all([
+    prisma.customer.count(),
+    prisma.order.count(),
+    prisma.order.count({
+      where: {
+        status: 'ready',
+      },
+    }),
+    prisma.order.count({
+      where: {
+        isExpress: true,
+      },
+    }),
+  ])
 
   const operationalSummary = {
     customerCount,
@@ -44,7 +39,7 @@ export default async function SettingsPage() {
   const storeInfo = {
     storeName: 'Mitha Laundry',
     description: 'Laundry management system untuk operasional harian, pelanggan, order, dan laporan.',
-    contactEmail: currentUser?.email ?? 'Belum tersedia',
+    contactEmail: 'Belum tersedia',
     contactPhone: 'Belum diatur',
     address: 'Belum diatur',
     serviceCount: SERVICES.length,
@@ -52,10 +47,10 @@ export default async function SettingsPage() {
   }
 
   const accountInfo = {
-    fullName: currentUser?.name ?? 'Admin',
-    email: currentUser?.email ?? 'Belum tersedia',
-    role: formatRole(currentUser?.role ?? 'admin'),
-    initials: currentUser?.initials ?? 'AD',
+    fullName: 'Admin Mitha',
+    email: 'Belum tersedia',
+    role: formatRole('admin'),
+    initials: 'AM',
   }
 
   const pricingServices = SERVICES.map((service) => ({

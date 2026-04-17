@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/prisma'
-import { requireApiSession } from '@/lib/auth/server'
 import { NextResponse } from 'next/server'
 import type { ReportData, ReportPeriod } from '@/lib/types/report'
 
@@ -300,12 +299,6 @@ function averageProcessingHours(orders: OrderWithCustomer[]) {
 }
 
 export async function GET(req: Request) {
-  const session = await requireApiSession()
-
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   try {
     const { searchParams } = new URL(req.url)
     const requestedPeriod = searchParams.get('period')
