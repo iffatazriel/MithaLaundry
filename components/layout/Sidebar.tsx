@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import LogoutButton from '@/components/layout/LogoutButton';
 import {
   LayoutDashboard,
   ClipboardList,
@@ -11,7 +12,6 @@ import {
   BarChart2,
   Package,
   Settings,
-  LogOut,
   X,
   ChevronLeft,
 } from 'lucide-react';
@@ -22,26 +22,36 @@ const NAV_ITEMS = [
   { href: '/customers', label: 'Customers', icon: Users },
   { href: '/reports', label: 'Reports', icon: BarChart2 },
   { href: '/inventory', label: 'Inventory', icon: Package },
-  { href: '/settings', label: 'Settings', icon: Settings },
+  // { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
-export default function Sidebar() {
-  const pathname = usePathname();
-  const [isCollapsed, setIsCollapsed] = useState(false); // Desktop collapse
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
+interface SidebarProps {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    initials: string;
+  } | null;
+  isMobileOpen: boolean;
+  onMobileClose: () => void;
+}
 
-  // Load collapse preference from localStorage (desktop only)
-  useEffect(() => {
-    const saved = localStorage.getItem('sidebarCollapsed');
-    if (saved !== null) setIsCollapsed(saved === 'true');
-  }, []);
+export default function Sidebar({ user, isMobileOpen, onMobileClose }: SidebarProps) {
+  const pathname = usePathname();
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    return localStorage.getItem('sidebarCollapsed') === 'true';
+  }); // Desktop collapse
 
   useEffect(() => {
     localStorage.setItem('sidebarCollapsed', isCollapsed.toString());
   }, [isCollapsed]);
 
   const toggleCollapse = () => setIsCollapsed(!isCollapsed);
-  const closeMobile = () => setIsMobileOpen(false);
 
   return (
     <>
@@ -49,14 +59,14 @@ export default function Sidebar() {
       {isMobileOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={closeMobile}
+          onClick={onMobileClose}
         />
       )}
 
       <aside
-        className={`bg-white border-r border-gray-100 flex flex-col h-screen fixed lg:sticky top-0 transition-all duration-300 z-50
+        className={`bg-white border-r border-gray-100 flex flex-col h-screen fixed lg:sticky top-0 left-0 transition-transform duration-300 z-50 w-[88vw] max-w-64 lg:max-w-none
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          ${isCollapsed ? 'w-20 lg:w-20' : 'w-64'}
+          ${isCollapsed ? 'lg:w-20' : 'lg:w-64'}
         `}
       >
         {/* Header */}
@@ -90,7 +100,7 @@ export default function Sidebar() {
 
           {/* Mobile Close Button */}
           <button
-            onClick={closeMobile}
+            onClick={onMobileClose}
             className="lg:hidden p-2 rounded-lg hover:bg-gray-100 text-gray-400"
           >
             <X size={22} />
@@ -105,7 +115,7 @@ export default function Sidebar() {
               <Link
                 key={href}
                 href={href}
-                onClick={closeMobile} // Tutup otomatis di mobile saat klik menu
+                onClick={onMobileClose} // Tutup otomatis di mobile saat klik menu
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all group ${
                   isActive
                     ? 'bg-blue-50 text-blue-700 font-medium'
@@ -124,9 +134,16 @@ export default function Sidebar() {
 
         {/* Bottom Section */}
         <div className="px-3 py-6 border-t border-gray-100 space-y-1">
+          {!isCollapsed && user && (
+            <div className="mx-1 mb-4 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+              <p className="text-sm font-semibold text-gray-900">{user.name}</p>
+              <p className="mt-1 text-xs text-gray-500">{user.email}</p>
+            </div>
+          )}
+
           <Link
-            href="/setting"
-            onClick={closeMobile}
+            href="/settings"
+            onClick={onMobileClose}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all ${
               isCollapsed ? 'justify-center' : ''
             }`}
@@ -135,15 +152,7 @@ export default function Sidebar() {
             {!isCollapsed && <span>Settings</span>}
           </Link>
 
-          <button
-            onClick={closeMobile}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-red-600 transition-all w-full ${
-              isCollapsed ? 'justify-center' : ''
-            }`}
-          >
-            <LogOut size={20} className="text-gray-400" />
-            {!isCollapsed && <span>Logout</span>}
-          </button>
+          <LogoutButton collapsed={isCollapsed} onClick={onMobileClose} />
         </div>
       </aside>
     </>

@@ -1,12 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Bell, Search, X } from 'lucide-react'
+import { Bell, Menu, Search, X } from 'lucide-react'
 
 interface TopbarProps {
   placeholder?: string
   showSearch?: boolean
   onSearch?: (value: string) => void
+  onOpenSidebar?: () => void
   user?: {
     name: string
     role: string
@@ -18,6 +19,7 @@ export default function Topbar({
   placeholder = 'Search orders, customers, or transactions...',
   showSearch = true,
   onSearch,
+  onOpenSidebar,
   user = {
     name: 'Admin Mitha',
     role: 'Shift Supervisor',
@@ -43,6 +45,15 @@ export default function Topbar({
     <header className="sticky top-0 z-40 h-16 border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
       <div className="flex h-full items-center justify-between gap-4 px-4 sm:px-6">
         <div className="flex min-w-0 flex-1 items-center">
+          <button
+            type="button"
+            onClick={onOpenSidebar}
+            className="mr-3 rounded-xl p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 lg:hidden"
+            aria-label="Open sidebar"
+          >
+            <Menu size={20} />
+          </button>
+
           {showSearch ? (
             <div className="relative w-full max-w-xl">
               <Search
