@@ -175,6 +175,88 @@ npx prisma migrate dev
 npx prisma generate
 ```
 
+### 5. Error `Cannot find module ... query_engine_bg.postgresql.wasm-base64.js`
+
+Biasanya ini terjadi karena instalasi dependency Prisma tidak sinkron atau versi `prisma` dan `@prisma/client` tidak cocok.
+
+Langkah perbaikan:
+
+Untuk Git Bash / terminal Unix:
+
+```bash
+rm -rf node_modules package-lock.json
+npm install
+npx prisma generate
+```
+
+Untuk Windows PowerShell:
+
+```powershell
+Remove-Item -Recurse -Force node_modules
+Remove-Item package-lock.json
+npm install
+npx prisma generate
+```
+
+Kalau masih error, pastikan memakai Node.js `20.x` lalu jalankan ulang instalasi.
+
+### 6. Error Prisma `P3009`
+
+Jika muncul error seperti:
+
+```text
+migrate found failed migrations in the target database
+```
+
+artinya database yang dipakai sudah menyimpan status migrasi gagal, sehingga Prisma menolak melanjutkan migrasi berikutnya.
+
+#### Jika database milik pribadi / lokal dan boleh dihapus
+
+Gunakan:
+
+```bash
+npx prisma migrate reset
+npx prisma generate
+npm run dev
+```
+
+Perhatian: perintah ini akan menghapus seluruh isi database.
+
+#### Jika database shared / dipakai ramai-ramai
+
+Jangan langsung reset. Gunakan langkah berikut:
+
+```bash
+npx prisma migrate status
+npx prisma migrate resolve --rolled-back 20260417170000_add_users_table
+npx prisma migrate deploy
+npx prisma generate
+```
+
+Catatan:
+
+- Gunakan `resolve --rolled-back` hanya jika migrasi tersebut memang gagal dan belum valid diterapkan.
+- Jika database shared berisi data penting, sebaiknya koordinasikan dulu sebelum menjalankan perintah migrasi.
+
+### 7. Urutan aman setelah clone jika Prisma error
+
+Kalau setelah clone project langsung error, coba urutan ini:
+
+```bash
+npm install
+copy .env.example .env
+```
+
+Isi `.env`, lalu jalankan:
+
+```bash
+npx prisma generate
+npx prisma migrate deploy
+npm run dev
+```
+
+Jika `migrate deploy` gagal karena `P3009`, ikuti langkah pada bagian error `P3009` di atas.
+
 ## Catatan
 
 - Jangan commit file `.env` karena file tersebut di-ignore oleh Git.
