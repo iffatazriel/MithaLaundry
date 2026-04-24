@@ -9,6 +9,9 @@ type LoginPageProps = {
   }>
 }
 
+const HERO_IMAGE =
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuDDf_rIVvM7oglHCdIvg_nPkPQWtozW3FByITrMG-gWcNPQPrV7hlJ_iw46CaYr-2pvNC0OBSeFfWWb_L2M4hF-0k1osPuANb4rUTAPemgFPk2Q3CZLnhLFr9uq8AaZkArE-J4kDn733KL7gX6HctGcVEqz2iaISNBo5QsePScySiRwqyPovBjkXrJwaIJXHgd9Sgu69HbQH1zsjuQbf0g6Q0wY51HPLwuTEWSLLu70Fgi-5PsW_7KGb3gm1UMkmKNw_Z79bXCek6c'
+
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const session = await getSession()
 
@@ -23,54 +26,83 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     : '/dashboard'
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,_#dbeafe,_transparent_35%),linear-gradient(135deg,_#f8fafc,_#eff6ff_45%,_#ffffff)] px-4 py-10">
-      <div className="absolute inset-0 bg-[linear-gradient(120deg,transparent_0%,rgba(59,130,246,0.06)_45%,transparent_100%)]" />
-      <section className="relative z-10 w-full max-w-5xl overflow-hidden rounded-[32px] border border-white/70 bg-white/90 shadow-[0_24px_80px_rgba(15,23,42,0.12)] backdrop-blur">
-        <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="bg-blue-600 px-8 py-10 text-white sm:px-10 lg:px-12 lg:py-14">
-            <p className="mb-3 inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-blue-50">
+    <div className="flex h-[100dvh] flex-col overflow-hidden bg-[#f5f7fa] text-[#191c1e]">
+      <main className="flex min-h-0 flex-1 lg:flex-row">
+        <section
+          className="relative hidden min-h-0 overflow-hidden lg:flex lg:w-[54%]"
+          style={{
+            backgroundImage: `url(${HERO_IMAGE})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-tr from-[#003b73]/80 via-[#0058aa]/35 to-transparent" />
+
+          <div className="relative z-10 flex h-full w-full flex-col justify-between p-8 xl:p-10">
+            <p className="text-2xl font-black tracking-tight text-white xl:text-3xl">
               Mitha Laundry
             </p>
-            <h1 className="max-w-md text-3xl font-bold leading-tight sm:text-4xl">
-              {hasUsers ? 'Masuk untuk mengelola operasional laundry.' : 'Aktifkan dashboard dengan admin pertama.'}
-            </h1>
-            <p className="mt-4 max-w-lg text-sm leading-6 text-blue-100 sm:text-base">
-              {hasUsers
-                ? 'Akses dashboard, data pelanggan, pesanan, dan laporan dengan session yang aman untuk tim internal.'
-                : 'Setup ini hanya muncul sekali. Setelah admin pertama dibuat, halaman ini otomatis berubah menjadi login biasa.'}
-            </p>
 
-            <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl border border-white/15 bg-white/10 p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-blue-100">Session</p>
-                <p className="mt-2 text-sm font-semibold">Cookie `httpOnly` dengan masa aktif 7 hari</p>
-              </div>
-              <div className="rounded-2xl border border-white/15 bg-white/10 p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-blue-100">Password</p>
-                <p className="mt-2 text-sm font-semibold">Disimpan sebagai hash, bukan plain text</p>
-              </div>
+            <div className="max-w-sm rounded-[24px] border border-white/20 bg-white/10 p-5 shadow-[0_16px_40px_rgba(15,23,42,0.18)] backdrop-blur-lg xl:p-6">
+              <p className="text-xl font-extrabold leading-snug text-white xl:text-2xl">
+                Bisnis lebih tertata, operasional lebih tenang.
+              </p>
+              <p className="mt-3 text-sm leading-6 text-white/80">
+                Satu dashboard untuk memantau transaksi, pelanggan, dan performa laundry
+                dengan lebih sederhana.
+              </p>
             </div>
           </div>
+        </section>
 
-          <div className="px-6 py-8 sm:px-10 sm:py-10 lg:px-12 lg:py-14">
-            <div className="mb-8">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-600">
+        <section className="flex min-h-0 w-full items-center justify-center px-5 py-5 sm:px-8 lg:w-[46%] lg:px-10 xl:px-14">
+          <div className="w-full max-w-[380px]">
+            <div className="mb-6 lg:hidden">
+              <span className="text-2xl font-black tracking-tight text-[#00488d]">
+                Mitha Laundry
+              </span>
+            </div>
+
+            <div className="mb-6">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#61707c] sm:text-xs">
                 {hasUsers ? 'Secure Login' : 'Initial Setup'}
               </p>
-              <h2 className="mt-3 text-2xl font-bold text-gray-900">
-                {hasUsers ? 'Welcome back' : 'Buat akun admin utama'}
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-gray-500">
+
+              <h1 className="text-2xl font-extrabold text-[#191c1e] sm:text-3xl">
+                {hasUsers ? 'Welcome Back' : 'Create Admin Account'}
+              </h1>
+
+              <p className="mt-2 text-sm leading-6 text-[#4b5560]">
                 {hasUsers
-                  ? 'Gunakan email dan password admin untuk masuk ke aplikasi.'
-                  : 'Masukkan data admin yang akan dipakai untuk login berikutnya.'}
+                  ? 'Masuk untuk mengakses dashboard laundry Anda.'
+                  : 'Lakukan pengaturan awal untuk mengaktifkan dashboard.'}
               </p>
             </div>
 
             <LoginForm hasUsers={hasUsers} nextPath={nextPath} />
           </div>
+        </section>
+      </main>
+
+      {/* <footer className="shrink-0 border-t border-[#e3e8ee] bg-[#f5f7fa] px-5 py-3 sm:px-8 lg:px-10 xl:px-14">
+        <div className="flex flex-col items-center justify-between gap-2 text-center md:flex-row md:text-left">
+          <p className="text-xs text-[#74808b]">
+            © 2026 Mitha Laundry
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-[#74808b]">
+            <span className="cursor-pointer transition-colors hover:text-[#00488d]">
+              Terms
+            </span>
+            <span className="cursor-pointer transition-colors hover:text-[#00488d]">
+              Privacy
+            </span>
+            <span className="cursor-pointer transition-colors hover:text-[#00488d]">
+              Support
+            </span>
+          </div>
         </div>
-      </section>
-    </main>
+      </footer> */}
+    </div>
   )
 }

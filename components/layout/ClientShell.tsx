@@ -25,7 +25,7 @@ export default function ClientShell({ children, user }: ClientShellProps) {
   const pathname = usePathname()
   const currentUser = use(user)
 
-  if (pathname === '/login') {
+  if (pathname === '/login' || pathname?.startsWith('/reports/print')) {
     return <>{children}</>
   }
 

@@ -4,6 +4,7 @@ import type { ReportPeriod } from '@/lib/types/report';
 
 interface ReportsHeaderProps {
   onExport?: () => void;
+  isExporting?: boolean;
   period: ReportPeriod;
   onPeriodChange: (period: ReportPeriod) => void;
 }
@@ -16,6 +17,7 @@ const PERIOD_OPTIONS: Array<{ id: ReportPeriod; label: string }> = [
 
 export default function ReportsHeader({
   onExport,
+  isExporting = false,
   period,
   onPeriodChange,
 }: ReportsHeaderProps) {
@@ -52,12 +54,13 @@ export default function ReportsHeader({
           </div>
           <button
             onClick={onExport}
-            className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+            disabled={isExporting}
+            className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            Export PDF
+            {isExporting ? 'Menyiapkan PDF...' : 'Export PDF'}
           </button>
         </div>
       </div>

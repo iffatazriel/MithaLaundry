@@ -115,7 +115,7 @@ export default function RecentOrders({ orders, pipeline }: RecentOrdersProps) {
           </p>
         </div>
         <Link
-          href="/order"
+          href="/orders"
           className="inline-flex items-center gap-2 self-start rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
         >
           View All Orders

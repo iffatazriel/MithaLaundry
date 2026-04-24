@@ -2,6 +2,7 @@
 
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useReports } from '@/lib/hooks/useReports';
 import ReportsHeader from '@/components/reports/ReportsHeader';
 import ReportOverviewStats from '@/components/reports/ReportOverviewStats';
@@ -10,11 +11,11 @@ import ServicePopularity from '@/components/reports/ServicePopularity';
 import HighValueOrdersTable from '@/components/reports/HighValueOrderTable';
 
 export default function ReportsPage() {
+  const router = useRouter();
   const { reportData, period, setPeriod, maxRevenue } = useReports();
 
   const handleExportPDF = () => {
-    console.log('Exporting PDF...');
-    // Implement PDF export logic here
+    router.push(`/reports/print?period=${period}`);
   };
 
   return (
