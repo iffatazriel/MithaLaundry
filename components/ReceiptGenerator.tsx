@@ -1,7 +1,6 @@
 'use client'
 import { useRef, useImperativeHandle, forwardRef } from 'react'
 import html2canvas from 'html2canvas'
-import Image from 'next/image'
 import { formatRupiah } from '@/lib/data'
 
 interface ReceiptProps {
@@ -53,165 +52,137 @@ const ReceiptGenerator = forwardRef<ReceiptHandle, ReceiptProps>(
       }
     }
 
+    // Hitung subtotal dari services
+    const subtotal = order.services?.reduce((sum: number, service: any) => sum + service.subtotal, 0) || 0
+    const total = subtotal + (order.isExpress ? (order.expressFee || 0) : 0)
+
     return (
       
-      <div style={{ padding: '24px', backgroundColor: '#f9fafb' }}>
+      <div style={{ padding: '24px', backgroundColor: '#f3f4f6' }}>
 
         {/* ── Receipt canvas area ── */}
         <div
           ref={receiptRef}
           style={{
-            fontFamily:      'Arial, sans-serif', 
+            fontFamily:      "'Courier New', 'Monaco', monospace",
             width:           '400px',
-            minHeight:       '600px',
-            padding:         '32px 24px',
             backgroundColor: '#ffffff',
-            borderRadius:    '16px',
             margin:          '0 auto',
+            boxShadow:       '0 4px 12px rgba(0,0,0,0.1)',
           }}
         >
-          {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <div style={{
-              width:           '72px',
-              height:          '72px',
-              background:      'linear-gradient(135deg, #6366f1, #3b82f6)',
-              borderRadius:    '16px',
-              margin:          '0 auto 16px',
-              display:         'flex',
-              alignItems:      'center',
-              justifyContent:  'center',
-            }}>
-              <Image 
-                src="icons/Background.svg" 
-                alt="Background Icon" 
-                width={30} 
-                height={30} 
-            />
-            </div>
-            <h1 style={{ fontSize: '22px', fontWeight: 'bold', color: '#111827', margin: '0 0 4px' }}>
-              LAUNDRY EXPRESS
-            </h1>
-            <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>
-              Cepat • Bersih • Terpercaya
-            </p>
-          </div>
-
-          {/* Customer Info */}
-          <div style={{ marginBottom: '20px' }}>
-            {[
-              { label: 'Customer', value: customer.name },
-              { label: 'Phone',    value: customer.phone },
-              { label: 'Tanggal',  value: new Date().toLocaleDateString('id-ID') },
-            ].map((row) => (
-              <div key={row.label} style={{
-                display:        'flex',
-                justifyContent: 'space-between',
-                fontSize:       '13px',
-                color:          '#4b5563',
-                marginBottom:   '8px',
-              }}>
-                <span>{row.label}</span>
-                <span style={{ fontWeight: '600', color: '#111827' }}>{row.value}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Divider */}
-          <div style={{ height: '1px', backgroundColor: '#e5e7eb', margin: '20px 0' }} />
-
-          {/* Services */}
-          <div style={{ marginBottom: '20px' }}>
-            {order.services?.map((service: any, index: number) => (
-              <div key={index} style={{
-                display:        'flex',
-                justifyContent: 'space-between',
-                alignItems:     'center',
-                padding:        '10px 0',
-                borderBottom:   index < order.services.length - 1 ? '1px solid #f3f4f6' : 'none',
-              }}>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#111827' }}>
-                    {service.name}
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>
-                    {service.quantity} {service.quantity <= 1 ? 'pcs' : 'pcs'}
-                  </div>
-                </div>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: '#111827' }}>
-                  {formatRupiah(service.subtotal)}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Express fee jika ada */}
-          {order.isExpress && (
-            <div style={{
-              display:        'flex',
-              justifyContent: 'space-between',
-              fontSize:       '13px',
-              color:          '#4b5563',
-              marginBottom:   '12px',
-            }}>
-              <span>Express Fee</span>
-              <span style={{ fontWeight: '600' }}>{formatRupiah(order.expressFee)}</span>
-            </div>
-          )}
-
-          {/* Total */}
-          <div style={{
-            background:    'linear-gradient(135deg, #eef2ff, #eff6ff)',
-            padding:       '16px',
-            borderRadius:  '12px',
-            marginBottom:  '20px',
+          {/* Header dengan border atas dan bawah */}
+          <div style={{ 
+            padding: '20px 20px 10px 20px',
+            borderTop: '2px solid #000',
+            borderBottom: '1px solid #ddd'
           }}>
-            <div style={{
-              display:        'flex',
-              justifyContent: 'space-between',
-              fontSize:       '16px',
-              fontWeight:     'bold',
-              color:          '#111827',
-            }}>
-              <span>TOTAL</span>
-              <span>{formatRupiah(order.total)}</span>
-            </div>
-            <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '6px', textAlign: 'center' }}>
-              Status: <span style={{ fontWeight: '700', color: '#4f46e5' }}>PENDING</span>
+            <div style={{ textAlign: 'center' }}>
+              <h1 style={{ fontSize: '18px', fontWeight: 'bold', color: '#000', margin: '0 0 4px', letterSpacing: '1px' }}>
+                MITHA LAUNDRY
+              </h1>
+              <p style={{ fontSize: '10px', color: '#666', margin: '0 0 4px', textTransform: 'uppercase' }}>
+                123 Anywhere St, Any City, ST 12345
+              </p>
+              <p style={{ fontSize: '10px', color: '#666', margin: 0 }}>
+                +123-456-7890 | mithalaundry@gmail.com
+              </p>
             </div>
           </div>
 
-          {/* Payment method */}
-          <div style={{
-            display:        'flex',
-            justifyContent: 'space-between',
-            fontSize:       '12px',
-            color:          '#6b7280',
-            marginBottom:   '20px',
+          {/* Billed to section */}
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid #ddd' }}>
+            <h2 style={{ fontSize: '12px', fontWeight: 'bold', color: '#000', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              TAGIHAN KEPADA:
+            </h2>
+            <div style={{ fontSize: '11px', color: '#333', lineHeight: '1.5' }}>
+              <div>{customer.name || 'Imani Olowe'}</div>
+              <div>{customer.phone || '+123-456-7890'}</div>
+            </div>
+          </div>
+
+          {/* Table Header */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: '2fr 0.5fr 1fr',
+            padding: '12px 20px',
+            backgroundColor: '#f9fafb',
+            borderBottom: '1px solid #ddd',
+            fontSize: '11px',
+            fontWeight: 'bold',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px'
           }}>
-            <span>Metode Pembayaran</span>
-            <span style={{ fontWeight: '600', textTransform: 'uppercase' }}>{order.payment}</span>
+            <div>DESKRIPSI</div>
+            <div style={{ textAlign: 'center' }}>QTY</div>
+            <div style={{ textAlign: 'right' }}>TOTAL</div>
           </div>
 
-          {/* Divider */}
-          <div style={{ height: '1px', backgroundColor: '#e5e7eb', margin: '16px 0' }} />
+          {/* Table Rows - 3 kolom */}
+          <div style={{ padding: '0 20px' }}>
+            {order.services?.map((service: any, index: number) => {
+              const quantity = service.quantity || 1
+              
+              return (
+                <div key={index} style={{
+                  display: 'grid',
+                  gridTemplateColumns: '2fr 0.5fr 1fr',
+                  padding: '10px 0',
+                  borderBottom: index < order.services.length - 1 ? '1px solid #f0f0f0' : 'none',
+                  fontSize: '11px',
+                  color: '#333'
+                }}>
+                  <div>{service.name}</div>
+                  <div style={{ textAlign: 'center' }}>{quantity}</div>
+                  <div style={{ textAlign: 'right', fontWeight: '500' }}>{formatRupiah(service.subtotal)}</div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Totals Section */}
+          <div style={{ padding: '16px 20px', borderTop: '1px solid #ddd', marginTop: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '6px' }}>
+              <div style={{ width: '140px', display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
+                <span>Subtotal:</span>
+                <span>{formatRupiah(subtotal)}</span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '6px' }}>
+              <div style={{ width: '140px', display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
+                <span>Pajak (0%):</span>
+                <span>Rp0</span>
+              </div>
+            </div>
+            {order.isExpress && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '6px' }}>
+                <div style={{ width: '140px', display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
+                  <span>Biaya Express:</span>
+                  <span>{formatRupiah(order.expressFee || 0)}</span>
+                </div>
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #ddd' }}>
+              <div style={{ width: '140px', display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 'bold' }}>
+                <span>TOTAL:</span>
+                <span>{formatRupiah(total)}</span>
+              </div>
+            </div>
+          </div>
 
           {/* Footer */}
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: '11px', color: '#6b7280', margin: '0 0 4px' }}>
-              Terima kasih telah menggunakan layanan kami
-            </p>
-            <p style={{ fontSize: '11px', color: '#6b7280', margin: '0 0 12px' }}>
-              Hubungi 0812-3456-7890 untuk info lebih lanjut
-            </p>
-            <p style={{ fontSize: '11px', fontWeight: '700', color: '#374151', margin: 0 }}>
-              Simpan struk ini untuk penjemputan
-            </p>
+          <div style={{ padding: '16px 20px', textAlign: 'center' }}>
+            <div style={{ fontSize: '9px', color: '#999', marginBottom: '4px' }}>
+              MITHA LAUNDRY
+            </div>
+            <div style={{ fontSize: '9px', color: '#999' }}>
+              123 Anywhere St, Any City, ST 12345
+            </div>
           </div>
         </div>
 
-        {/* Action Buttons  */}
-        <div style={{ display: 'flex', gap: '12px', padding: '16px 0 0' }}>
+        {/* Action Buttons */}
+        <div style={{ display: 'flex', gap: '12px', padding: '16px 0 0', maxWidth: '400px', margin: '0 auto' }}>
           <button
             onClick={handleDownload}
             style={{
@@ -226,7 +197,7 @@ const ReceiptGenerator = forwardRef<ReceiptHandle, ReceiptProps>(
               cursor:        'pointer',
             }}
           >
-            📸 Download PNG
+            Download PNG
           </button>
           <button
             onClick={() => window.print()}
@@ -242,7 +213,7 @@ const ReceiptGenerator = forwardRef<ReceiptHandle, ReceiptProps>(
               cursor:        'pointer',
             }}
           >
-            🖨️ Print
+            Print
           </button>
         </div>
       </div>

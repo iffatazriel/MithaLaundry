@@ -359,11 +359,6 @@ if (!activeCustomer) {
                   <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
                     Phone Number
                   </label>
-                  {selectedCustomer && (
-                    <p className="mt-2 text-xs text-blue-600">
-                      Menggunakan customer terdaftar: {selectedCustomer.name}
-                    </p>
-                  )}
                   <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:border-blue-400">
                     <span className="px-3 py-2.5 bg-gray-50 text-sm text-gray-500 border-r border-gray-200">
                       +62
@@ -381,6 +376,11 @@ if (!activeCustomer) {
                       className="flex-1 min-w-0 px-3 py-2.5 text-sm placeholder:text-gray-300 outline-none"
                     />
                   </div>
+                  {selectedCustomer && (
+                    <p className="mt-2 text-xs text-blue-600">
+                      Menggunakan customer terdaftar: {selectedCustomer.name}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
