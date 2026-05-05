@@ -12,8 +12,8 @@ interface RecentOrdersProps {
 }
 
 const PIPELINE_STAGES = [
-  { key: 'sorting', label: 'Sorting', color: 'bg-gray-700', icon: Shirt },
-  { key: 'washing', label: 'Washing', color: 'bg-blue-600', icon: Droplet },
+  { key: 'sorting', label: 'Sorting', color: 'bg-white-700', icon: Shirt },
+  { key: 'washing', label: 'Washing', color: 'bg-red-500', icon: Droplet },
   { key: 'ironing', label: 'Ironing', color: 'bg-amber-500', icon: Sparkles },
   { key: 'ready', label: 'Ready', color: 'bg-green-500', icon: CheckCircle },
 ]as const
@@ -24,6 +24,7 @@ const STATUS_OPTIONS = [
   { value: 'ironing', label: 'Ironing' },
   { value: 'ready', label: 'Ready' },
   { value: 'completed', label: 'Completed' },
+  { value: 'cancelled', label: 'Cancelled' },
 ]
 
 function normalizeStatus(status?: string) {
@@ -33,6 +34,32 @@ function normalizeStatus(status?: string) {
 function formatStatusLabel(status?: string) {
   const normalized = status?.toLowerCase() ?? 'completed'
   return normalized.charAt(0).toUpperCase() + normalized.slice(1)
+}
+
+function formatPaymentLabel(order: Order) {
+  const method = order.payment ?? order.paymentMethod ?? '-'
+  const status = order.paymentStatus ?? (method === 'cash' ? 'paid' : 'unpaid')
+
+  return {
+    method: method.toUpperCase(),
+    status,
+  }
+}
+
+function paymentStatusClass(status?: string) {
+  if (status === 'paid') {
+    return 'border-emerald-100 bg-emerald-50 text-emerald-700'
+  }
+
+  if (status === 'pending') {
+    return 'border-amber-100 bg-amber-50 text-amber-700'
+  }
+
+  if (status === 'failed' || status === 'expired') {
+    return 'border-red-100 bg-red-50 text-red-700'
+  }
+
+  return 'border-gray-100 bg-gray-50 text-gray-600'
 }
 
 export default function RecentOrders({ orders, pipeline }: RecentOrdersProps) {
@@ -106,7 +133,7 @@ export default function RecentOrders({ orders, pipeline }: RecentOrdersProps) {
   }
 
   return (
-    <div className="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+    <div className="min-w-0 rounded-3xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
       <div className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">Recent Orders</h2>
@@ -183,6 +210,7 @@ export default function RecentOrders({ orders, pipeline }: RecentOrdersProps) {
             const serviceCount = Array.isArray(services) ? services.length : 0
             const normalizedStatus = normalizeStatus(order.status)
             const rawStatus = order.status?.toLowerCase() ?? 'completed'
+            const payment = formatPaymentLabel(order)
 
             return (
               <div key={order.id} className="rounded-2xl border border-gray-100 p-4">
@@ -219,6 +247,20 @@ export default function RecentOrders({ orders, pipeline }: RecentOrdersProps) {
 
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
+                      Payment
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-semibold text-gray-800">
+                        {payment.method}
+                      </span>
+                      <span className={`rounded-full border px-2 py-1 text-xs font-semibold ${paymentStatusClass(payment.status)}`}>
+                        {payment.status.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
                       Update Status
                     </p>
                     <select
@@ -245,7 +287,7 @@ export default function RecentOrders({ orders, pipeline }: RecentOrdersProps) {
           <table className="min-w-full">
             <thead className="bg-gray-50">
               <tr>
-                {['Customer', 'Service', 'Status', 'Completion', 'Update Status'].map((h) => (
+                {['Customer', 'Service', 'Status', 'Payment', 'Completion', 'Update Status'].map((h) => (
                   <th
                     key={h}
                     className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400"
@@ -259,7 +301,7 @@ export default function RecentOrders({ orders, pipeline }: RecentOrdersProps) {
             <tbody className="divide-y divide-gray-100 bg-white">
               {paginatedOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center">
+                  <td colSpan={6} className="px-4 py-12 text-center">
                     <p className="text-base font-semibold text-gray-700">Belum ada order terbaru</p>
                     <p className="mt-2 text-sm text-gray-500">
                       Order yang masuk akan langsung muncul di dashboard ini.
@@ -277,6 +319,7 @@ export default function RecentOrders({ orders, pipeline }: RecentOrdersProps) {
                   const serviceCount = Array.isArray(services) ? services.length : 0
                   const normalizedStatus = normalizeStatus(order.status)
                   const rawStatus = order.status?.toLowerCase() ?? 'completed'
+                  const payment = formatPaymentLabel(order)
 
                   return (
                     <tr key={order.id} className="transition hover:bg-gray-50">
@@ -297,6 +340,17 @@ export default function RecentOrders({ orders, pipeline }: RecentOrdersProps) {
 
                       <td className="px-4 py-4 pr-3">
                         <StatusBadge status={normalizedStatus} />
+                      </td>
+
+                      <td className="px-4 py-4 pr-3">
+                        <div className="flex flex-col items-start gap-1">
+                          <span className="text-sm font-semibold text-gray-800">
+                            {payment.method}
+                          </span>
+                          <span className={`rounded-full border px-2 py-1 text-xs font-semibold ${paymentStatusClass(payment.status)}`}>
+                            {payment.status.toUpperCase()}
+                          </span>
+                        </div>
                       </td>
 
                       <td className="px-4 py-4 pr-3">

@@ -64,7 +64,7 @@ export default function Sidebar({ user, isMobileOpen, onMobileClose }: SidebarPr
       )}
 
       <aside
-        className={`bg-white border-r border-gray-100 flex flex-col h-screen fixed lg:sticky top-0 left-0 transition-transform duration-300 z-50 w-[88vw] max-w-64 lg:max-w-none
+        className={`fixed left-0 top-0 z-50 flex h-[100dvh] w-[18rem] max-w-[calc(100vw-1rem)] flex-col border-r border-gray-100 bg-white shadow-2xl transition-transform duration-300 lg:sticky lg:max-w-none lg:shadow-none
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           ${isCollapsed ? 'lg:w-20' : 'lg:w-64'}
         `}
@@ -72,9 +72,27 @@ export default function Sidebar({ user, isMobileOpen, onMobileClose }: SidebarPr
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-6 border-b border-gray-100">
           {/* Logo - Hilang saat collapsed */}
-          {!isCollapsed && (
+          <div className={`flex min-w-0 items-center gap-3 ${isCollapsed ? 'lg:hidden' : ''}`}>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100">
+              <Image
+                src="/icons/Background.svg"
+                alt="Mitha Laundry"
+                width={32}
+                height={32}
+                className="object-contain"
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-lg font-bold leading-none text-gray-900">Mitha Laundry</p>
+              <p className="mt-1 truncate text-[10px] uppercase tracking-widest text-gray-400">
+                Premium Service
+              </p>
+            </div>
+          </div>
+
+          {isCollapsed && (
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 flex items-center justify-center bg-blue-100 rounded-xl">
+              <div className="hidden h-10 w-10 items-center justify-center rounded-xl bg-blue-100 lg:flex">
                 <Image
                   src="/icons/Background.svg"
                   alt="Mitha Laundry"
@@ -82,10 +100,6 @@ export default function Sidebar({ user, isMobileOpen, onMobileClose }: SidebarPr
                   height={32}
                   className="object-contain"
                 />
-              </div>
-              <div>
-                <p className="font-bold text-gray-900 text-lg leading-none">Mitha Laundry</p>
-                <p className="text-[10px] text-gray-400 uppercase tracking-widest">Premium Service</p>
               </div>
             </div>
           )}
@@ -120,13 +134,13 @@ export default function Sidebar({ user, isMobileOpen, onMobileClose }: SidebarPr
                   isActive
                     ? 'bg-blue-50 text-blue-700 font-medium'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                } ${isCollapsed ? 'justify-center' : ''}`}
+                } ${isCollapsed ? 'lg:justify-center' : ''}`}
               >
                 <Icon
                   size={20}
                   className={isActive ? 'text-blue-700' : 'text-gray-400 group-hover:text-gray-500'}
                 />
-                {!isCollapsed && <span>{label}</span>}
+                <span className={`truncate ${isCollapsed ? 'lg:hidden' : ''}`}>{label}</span>
               </Link>
             );
           })}
@@ -134,22 +148,24 @@ export default function Sidebar({ user, isMobileOpen, onMobileClose }: SidebarPr
 
         {/* Bottom Section */}
         <div className="px-3 py-6 border-t border-gray-100 space-y-1">
-          {!isCollapsed && user && (
+          <div className={`${isCollapsed ? 'lg:hidden' : ''}`}>
+          {user && (
             <div className="mx-1 mb-4 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
-              <p className="text-sm font-semibold text-gray-900">{user.name}</p>
-              <p className="mt-1 text-xs text-gray-500">{user.email}</p>
+              <p className="truncate text-sm font-semibold text-gray-900">{user.name}</p>
+              <p className="mt-1 truncate text-xs text-gray-500">{user.email}</p>
             </div>
           )}
+          </div>
 
           <Link
             href="/settings"
             onClick={onMobileClose}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all ${
-              isCollapsed ? 'justify-center' : ''
+              isCollapsed ? 'lg:justify-center' : ''
             }`}
           >
             <Settings size={20} className="text-gray-400" />
-            {!isCollapsed && <span>Settings</span>}
+            <span className={`truncate ${isCollapsed ? 'lg:hidden' : ''}`}>Settings</span>
           </Link>
 
           <LogoutButton collapsed={isCollapsed} onClick={onMobileClose} />

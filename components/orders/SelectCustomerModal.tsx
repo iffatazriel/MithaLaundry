@@ -3,11 +3,12 @@
 import { useState } from 'react'
 import { Search, X, ChevronRight, UserRound } from 'lucide-react'
 import { useOrderContext } from '@/lib/context/OrderContext'
+import type { Customer } from '@/types'
 
 interface Props {
   isOpen: boolean
   onClose: () => void
-  onSelect: (customer: any) => void
+  onSelect: (customer: Customer) => void
 }
 
 export default function SelectCustomerModal({ isOpen, onClose, onSelect }: Props) {

@@ -1,4 +1,4 @@
-import type { Order, DashboardStats, Service } from '@/types'
+import type { DashboardStats, Service } from '@/types'
 
 export const SERVICES: Service[] = [
   {
@@ -32,8 +32,11 @@ export const SERVICES: Service[] = [
 ]
 
 export const DASHBOARD_STATS: DashboardStats = {
-  totalRevenueToday: 2450000,
+  totalRevenue: 2450000,
   revenueChangePercent: 12.5,
+  revenueLabel: 'Total Revenue Today',
+  comparisonLabel: 'vs yesterday',
+  period: 'today',
   activeOrders: 42,
   activeInWashing: 18,
   pendingPickups: 15,

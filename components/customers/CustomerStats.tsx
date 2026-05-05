@@ -1,6 +1,5 @@
 'use client';
  
-import { ArrowUpRight, ShieldCheck, UserRound, Users } from 'lucide-react';
 import { CustomerStats as CustomerStatsType } from '@/lib/types/customers';
  
 interface CustomerStatsProps {
@@ -18,7 +17,7 @@ export default function CustomerStats({ stats }: CustomerStatsProps) {
           {stats.totalCustomers.toLocaleString()}
         </p>
         <p className="text-sm text-green-600 font-medium flex items-center gap-1">
-          <span>↗</span> +{stats.totalCustomersGrowth}% from last month
+          <span>Up</span> +{stats.totalCustomersGrowth}% from last month
         </p>
       </div>
  

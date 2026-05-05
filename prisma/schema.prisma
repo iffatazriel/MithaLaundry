@@ -17,31 +17,53 @@ model User {
 }
 
 model Customer {
-  id          String   @id @default(uuid())
+  id          String  @id @default(uuid())
   name        String
-  email       String?  @unique
-  phone       String   @unique
-  totalOrders Int      @default(0)
+  email       String? @unique
+  phone       String  @unique
+  totalOrders Int     @default(0)
   status      String
   orders      Order[]
 }
 
 model Order {
-  id           String   @id @default(cuid())
-  customerId   String
-  customer     Customer @relation(fields: [customerId], references: [id])
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
 
-  status       String   @default("pending")
+  status String @default("sorting")
 
-  services     Json
-  payment      String
-  itemCount    Int?
-  deliveryDate DateTime?
-  isExpress    Boolean  @default(false)
+  services          Json
+  payment           String
+  paymentStatus     String    @default("unpaid")
+  paymentProvider   String?
+  xenditReferenceId String?   @unique
+  xenditQrId        String?
+  xenditQrString    String?
+  xenditPaymentId   String?
+  paidAt            DateTime?
+  itemCount         Int?
+  deliveryDate      DateTime?
+  isExpress         Boolean   @default(false)
 
-  subtotal     Int
-  expressFee   Int
-  total        Int
+  subtotal   Int
+  expressFee Int
+  total      Int
 
-  createdAt    DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  statusHistory OrderStatusHistory[]
+}
+
+model OrderStatusHistory {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fromStatus String?
+  toStatus   String
+  note       String?
+  changedBy  String?
+  createdAt  DateTime @default(now())
+
+  @@index([orderId, createdAt])
 }

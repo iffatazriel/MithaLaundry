@@ -9,7 +9,7 @@ interface HighValueOrdersTableProps {
 
 export default function HighValueOrdersTable({ orders }: HighValueOrdersTableProps) {
   return (
-    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+    <div className="min-w-0 overflow-hidden rounded-lg border border-gray-200 bg-white">
       <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <h3 className="text-lg font-semibold text-gray-900">
           High-Value Orders

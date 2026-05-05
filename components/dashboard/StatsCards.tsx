@@ -10,14 +10,14 @@ export default function StatsCards({ stats }: StatsCardsProps) {
   const revenueChangePrefix = stats.revenueChangePercent > 0 ? '+' : ''
 
   return (
-    <div className="mb-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px_180px]">
+    <div className="mb-6 grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_180px_180px]">
       {/* Revenue */}
       <div className="relative overflow-hidden rounded-2xl bg-blue-800 px-5 py-5 text-white sm:px-6">
         <div className="absolute right-4 bottom-4 opacity-10">
           <div className="w-24 h-24 rounded-full border-[16px] border-white" />
         </div>
         <p className="text-xs text-blue-200 mb-2">{stats.revenueLabel}</p>
-        <p className="mb-2 text-2xl font-bold tracking-tight sm:text-3xl">
+        <p className="mb-2 break-words text-2xl font-bold tracking-tight sm:text-3xl">
           {formatRupiah(stats.totalRevenue)}
         </p>
         <div className="flex items-center gap-1.5 text-xs text-blue-200">

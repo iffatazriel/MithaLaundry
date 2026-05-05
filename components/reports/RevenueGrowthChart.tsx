@@ -14,7 +14,7 @@ export default function RevenueGrowthChart({
   periodLabel,
 }: RevenueGrowthChartProps) {
   return (
-    <div className="mb-8 rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
+    <div className="mb-8 min-w-0 rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-2">
         Revenue Growth
       </h3>
@@ -23,7 +23,7 @@ export default function RevenueGrowthChart({
       </p>
 
       <div className="mb-6 h-56 overflow-x-auto sm:h-64">
-        <div className="flex h-full min-w-[560px] items-end justify-between gap-2">
+        <div className="flex h-full min-w-[480px] items-end justify-between gap-2 sm:min-w-[560px]">
         {data.map((item, index) => {
           const heightPercent = (item.revenue / maxRevenue) * 100;
           return (
@@ -48,12 +48,14 @@ export default function RevenueGrowthChart({
         </div>
       </div>
 
-      <div className="flex min-w-[560px] justify-between overflow-x-auto text-center">
-        {data.map((item, index) => (
-          <p key={index} className="flex-1 text-xs font-medium text-gray-600">
-            {item.week}
-          </p>
-        ))}
+      <div className="overflow-x-auto">
+        <div className="flex min-w-[480px] justify-between text-center sm:min-w-[560px]">
+          {data.map((item, index) => (
+            <p key={index} className="flex-1 text-xs font-medium text-gray-600">
+              {item.week}
+            </p>
+          ))}
+        </div>
       </div>
     </div>
   );

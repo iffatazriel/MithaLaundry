@@ -26,8 +26,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     : '/dashboard'
 
   return (
-    <div className="flex h-[100dvh] flex-col overflow-hidden bg-[#f5f7fa] text-[#191c1e]">
-      <main className="flex min-h-0 flex-1 lg:flex-row">
+    <div className="flex min-h-[100dvh] flex-col overflow-x-hidden bg-[#f5f7fa] text-[#191c1e]">
+      <main className="flex min-h-[100dvh] flex-1 overflow-y-auto lg:flex-row">
         <section
           className="relative hidden min-h-0 overflow-hidden lg:flex lg:w-[54%]"
           style={{
@@ -55,7 +55,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </div>
         </section>
 
-        <section className="flex min-h-0 w-full items-center justify-center px-5 py-5 sm:px-8 lg:w-[46%] lg:px-10 xl:px-14">
+        <section className="flex min-h-0 w-full items-center justify-center px-5 py-8 sm:px-8 lg:w-[46%] lg:px-10 xl:px-14">
           <div className="w-full max-w-[380px]">
             <div className="mb-6 lg:hidden">
               <span className="text-2xl font-black tracking-tight text-[#00488d]">

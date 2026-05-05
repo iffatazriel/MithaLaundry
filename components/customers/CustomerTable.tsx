@@ -28,7 +28,7 @@ export default function CustomerTable({
   }
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-gray-100">
+    <div className="flex h-full w-full min-w-0 flex-col overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-gray-100">
       <div className="border-b border-gray-100 px-6 py-5">
         <h2 className="text-lg font-semibold text-gray-900">Customer Directory</h2>
         <p className="mt-1 text-sm text-gray-500">
@@ -36,7 +36,7 @@ export default function CustomerTable({
         </p>
       </div>
 
-      <div className="flex-1 overflow-x-auto">
+      <div className="min-w-0 flex-1 overflow-x-auto">
         <table className="w-full min-w-[760px]">
           <thead className="border-b border-gray-100 bg-gray-50">
             <tr>

@@ -120,10 +120,9 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
   // Customer list untuk modal (fetch sekali)
   const [customers, setCustomers] = useState<SelectedCustomer[]>([]);
-  const [customersLoading, setCustomersLoading] = useState(false);
+  const [customersLoading, setCustomersLoading] = useState(true);
 
   useEffect(() => {
-    setCustomersLoading(true);
     fetch('/api/customers')
       .then(res => res.json())
       .then(data => setCustomers(data))

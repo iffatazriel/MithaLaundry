@@ -15,11 +15,11 @@ export default function LogoutButton({ collapsed = false, onClick }: LogoutButto
         type="submit"
         onClick={onClick}
         className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm text-gray-600 transition-all hover:bg-gray-50 hover:text-red-600 ${
-          collapsed ? 'justify-center' : ''
+          collapsed ? 'lg:justify-center' : ''
         }`}
       >
         <LogOut size={20} className="text-gray-400" />
-        {!collapsed && <span>Logout</span>}
+        <span className={`truncate ${collapsed ? 'lg:hidden' : ''}`}>Logout</span>
       </button>
     </form>
   )

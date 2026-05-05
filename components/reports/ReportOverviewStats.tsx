@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactElement } from 'react';
 import { ReportStats as ReportStatsType } from '@/lib/types/report';
 
 interface ReportOverviewStatsProps {
@@ -46,7 +47,7 @@ export default function ReportOverviewStats({
   ];
 
   const getIcon = (icon: string) => {
-    const icons: Record<string, JSX.Element> = {
+    const icons: Record<string, ReactElement> = {
       wallet: (
         <svg className="h-8 w-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10l1.007 0A1 1 0 004 10V7a1 1 0 00-1-1H3a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-1.007a1 1 0 00-1 1v3a1 1 0 001 1H19" />

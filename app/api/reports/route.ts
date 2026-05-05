@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import type { ReportData, ReportPeriod } from '@/lib/types/report'
+import { requireApiSession } from '@/lib/auth/server'
 
 type OrderWithCustomer = Awaited<ReturnType<typeof prisma.order.findMany>>[number] & {
   customer: {
@@ -300,6 +301,12 @@ function averageProcessingHours(orders: OrderWithCustomer[]) {
 
 export async function GET(req: Request) {
   try {
+    const session = await requireApiSession()
+
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { searchParams } = new URL(req.url)
     const requestedPeriod = searchParams.get('period')
     const period: ReportPeriod =

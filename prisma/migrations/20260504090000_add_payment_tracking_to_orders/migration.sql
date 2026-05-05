@@ -1,0 +1,10 @@
+ALTER TABLE "Order"
+ADD COLUMN IF NOT EXISTS "paymentStatus" TEXT NOT NULL DEFAULT 'unpaid',
+ADD COLUMN IF NOT EXISTS "paymentProvider" TEXT,
+ADD COLUMN IF NOT EXISTS "xenditReferenceId" TEXT,
+ADD COLUMN IF NOT EXISTS "xenditQrId" TEXT,
+ADD COLUMN IF NOT EXISTS "xenditQrString" TEXT,
+ADD COLUMN IF NOT EXISTS "xenditPaymentId" TEXT,
+ADD COLUMN IF NOT EXISTS "paidAt" TIMESTAMP(3);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "Order_xenditReferenceId_key" ON "Order"("xenditReferenceId");

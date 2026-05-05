@@ -141,7 +141,7 @@ export default function InventoryPage() {
   const healthyCount = INVENTORY_ITEMS.filter((item) => item.status === 'healthy').length;
 
   return (
-    <main className="flex-1 min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+    <main className="min-h-screen min-w-0 flex-1 bg-gray-50 p-4 sm:p-6 lg:p-8">
       <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="mb-2 text-sm font-medium text-blue-600">Operations / Inventory</p>
@@ -210,8 +210,8 @@ export default function InventoryPage() {
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-gray-100 sm:p-6">
+      <section className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-gray-100 sm:p-6">
           <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Daftar Persediaan</h2>
@@ -220,7 +220,7 @@ export default function InventoryPage() {
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 lg:min-w-[420px] lg:flex-row">
+            <div className="min-w-0 flex flex-col gap-3 lg:min-w-[420px] lg:flex-row">
               <label className="flex flex-1 items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
                 <Search size={18} className="text-gray-400" />
                 <input
@@ -231,7 +231,7 @@ export default function InventoryPage() {
                 />
               </label>
 
-              <div className="flex gap-2 overflow-x-auto">
+              <div className="flex max-w-full gap-2 overflow-x-auto pb-1">
                 {FILTER_OPTIONS.map((option) => {
                   const isActive = activeFilter === option.id;
 

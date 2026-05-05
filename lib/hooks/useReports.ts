@@ -29,7 +29,7 @@ const emptyReportData: ReportData = {
 
 export function useReports() {
   const [reportData, setReportData] = useState<ReportData>(emptyReportData);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<ReportPeriod>('month');
 
   useEffect(() => {

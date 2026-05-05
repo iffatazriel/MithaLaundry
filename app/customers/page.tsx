@@ -8,6 +8,7 @@ import CustomerOverviewStats from '@/components/customers/CustomerOverviewStats'
 import CustomerSearch from '@/components/customers/CustomerSearch';
 import CustomerTable from '@/components/customers/CustomerTable';
 import AddCustomerModal from '@/components/customers/AddCustomerModal';
+import { CustomersPageSkeleton } from '@/components/skeletons/PageSkeletons';
 
 export default function CustomersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,9 +25,13 @@ export default function CustomersPage() {
     setCurrentPage,
     addCustomer
   } = useCustomers();
+
+  if (loading) {
+    return <CustomersPageSkeleton />;
+  }
  
   return (
-    <main className="flex-1 min-h-screen bg-gray-50 p-8">
+    <main className="min-h-screen min-w-0 flex-1 bg-gray-50 p-4 sm:p-6 lg:p-8">
       <CustomersHeader onAddClick={() => setIsModalOpen(true)} />
       <CustomerOverviewStats stats={stats} />
       <CustomerSearch filters={filters} onFilterChange={updateFilters} />

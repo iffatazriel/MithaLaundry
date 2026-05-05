@@ -25,4 +25,14 @@ body {
  
 html, body {
   height: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  min-width: 0;
+}
+
+#__next {
+  min-width: 0;
 }

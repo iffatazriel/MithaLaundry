@@ -30,14 +30,14 @@ export default function ClientShell({ children, user }: ClientShellProps) {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex min-h-[100dvh] w-full min-w-0 overflow-x-hidden bg-gray-50">
       <Sidebar
         user={currentUser}
         isMobileOpen={isMobileSidebarOpen}
         onMobileClose={() => setIsMobileSidebarOpen(false)}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden lg:pl-0">
+      <div className="flex min-w-0 flex-1 flex-col lg:pl-0">
         <Topbar
           user={
             currentUser
@@ -50,7 +50,7 @@ export default function ClientShell({ children, user }: ClientShellProps) {
           }
           onOpenSidebar={() => setIsMobileSidebarOpen(true)}
         />
-        <main className="flex-1 overflow-y-auto">
+        <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
           {children}
         </main>
       </div>

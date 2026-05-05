@@ -4,9 +4,32 @@ import html2canvas from 'html2canvas'
 import Image from 'next/image'
 import { formatRupiah } from '@/lib/data'
 
+type ReceiptService = {
+  name: string
+  quantity: number
+  subtotal: number
+}
+
+type ReceiptOrder = {
+  id?: string | null
+  services?: ReceiptService[]
+  payment?: string
+  itemCount?: number
+  deliveryDate?: string
+  subtotal?: number
+  isExpress?: boolean
+  expressFee?: number
+  total: number
+}
+
+type ReceiptCustomer = {
+  name: string
+  phone: string
+}
+
 interface ReceiptProps {
-  order: any
-  customer: any
+  order: ReceiptOrder
+  customer: ReceiptCustomer
 }
 
 export interface ReceiptHandle {
@@ -16,17 +39,19 @@ export interface ReceiptHandle {
 const ReceiptGenerator = forwardRef<ReceiptHandle, ReceiptProps>(
   ({ order, customer }, ref) => {
     const receiptRef = useRef<HTMLDivElement>(null)
+    const services = order.services ?? []
+    const canvasOptions = {
+      scale: 3,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+    } as unknown as Parameters<typeof html2canvas>[1]
 
     useImperativeHandle(ref, () => ({
       generateImage: async () => {
         if (!receiptRef.current) return null
         try {
-          const canvas = await html2canvas(receiptRef.current, {
-            scale:           3,
-            useCORS:         true,
-            backgroundColor: '#ffffff',
-            logging:         false,
-          })
+          const canvas = await html2canvas(receiptRef.current, canvasOptions)
           return canvas.toDataURL('image/png')
         } catch (error) {
           console.error('Error generating receipt:', error)
@@ -38,12 +63,7 @@ const ReceiptGenerator = forwardRef<ReceiptHandle, ReceiptProps>(
     const handleDownload = async () => {
       if (!receiptRef.current) return
       try {
-        const canvas = await html2canvas(receiptRef.current, {
-          scale:           3,
-          useCORS:         true,
-          backgroundColor: '#ffffff',
-          logging:         false,
-        })
+        const canvas = await html2canvas(receiptRef.current, canvasOptions)
         const link     = document.createElement('a')
         link.download  = `receipt-${order.id || Date.now()}.png`
         link.href      = canvas.toDataURL('image/png')
@@ -57,7 +77,7 @@ const ReceiptGenerator = forwardRef<ReceiptHandle, ReceiptProps>(
       
       <div style={{ padding: '24px', backgroundColor: '#f9fafb' }}>
 
-        {/* ── Receipt canvas area ── */}
+        {/* Receipt canvas area */}
         <div
           ref={receiptRef}
           style={{
@@ -93,7 +113,7 @@ const ReceiptGenerator = forwardRef<ReceiptHandle, ReceiptProps>(
               LAUNDRY EXPRESS
             </h1>
             <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>
-              Cepat • Bersih • Terpercaya
+              Cepat - Bersih - Terpercaya
             </p>
           </div>
 
@@ -122,13 +142,13 @@ const ReceiptGenerator = forwardRef<ReceiptHandle, ReceiptProps>(
 
           {/* Services */}
           <div style={{ marginBottom: '20px' }}>
-            {order.services?.map((service: any, index: number) => (
+            {services.map((service, index) => (
               <div key={index} style={{
                 display:        'flex',
                 justifyContent: 'space-between',
                 alignItems:     'center',
                 padding:        '10px 0',
-                borderBottom:   index < order.services.length - 1 ? '1px solid #f3f4f6' : 'none',
+                borderBottom:   index < services.length - 1 ? '1px solid #f3f4f6' : 'none',
               }}>
                 <div>
                   <div style={{ fontSize: '13px', fontWeight: '600', color: '#111827' }}>
@@ -155,7 +175,7 @@ const ReceiptGenerator = forwardRef<ReceiptHandle, ReceiptProps>(
               marginBottom:   '12px',
             }}>
               <span>Express Fee</span>
-              <span style={{ fontWeight: '600' }}>{formatRupiah(order.expressFee)}</span>
+              <span style={{ fontWeight: '600' }}>{formatRupiah(order.expressFee ?? 0)}</span>
             </div>
           )}
 
@@ -226,7 +246,7 @@ const ReceiptGenerator = forwardRef<ReceiptHandle, ReceiptProps>(
               cursor:        'pointer',
             }}
           >
-            📸 Download PNG
+            Download PNG
           </button>
           <button
             onClick={() => window.print()}
@@ -242,7 +262,7 @@ const ReceiptGenerator = forwardRef<ReceiptHandle, ReceiptProps>(
               cursor:        'pointer',
             }}
           >
-            🖨️ Print
+            Print
           </button>
         </div>
       </div>

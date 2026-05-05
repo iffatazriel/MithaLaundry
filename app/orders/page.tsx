@@ -12,6 +12,7 @@ import {
   X,
 } from 'lucide-react'
 import StatusBadge from '@/components/ui/StatusBadge'
+import { OrdersPageSkeleton } from '@/components/skeletons/PageSkeletons'
 import type { Order } from '@/types'
 
 const STATUS_OPTIONS = [
@@ -21,6 +22,7 @@ const STATUS_OPTIONS = [
   { value: 'ironing', label: 'Ironing' },
   { value: 'ready', label: 'Ready' },
   { value: 'completed', label: 'Completed' },
+  { value: 'cancelled', label: 'Cancelled' },
 ] as const
 
 const QUICK_ACTION_LABELS: Record<string, string> = {
@@ -39,6 +41,7 @@ type ServiceItem = {
 
 type LocalOrder = Order & {
   payment?: string
+  paymentStatus?: string
   itemCount?: number | null
   subtotal?: number
   expressFee?: number
@@ -80,6 +83,22 @@ function formatOrderDate(value?: string) {
     month: 'short',
     year: 'numeric',
   })
+}
+
+function paymentStatusClass(status?: string) {
+  if (status === 'paid') {
+    return 'bg-emerald-50 text-emerald-700'
+  }
+
+  if (status === 'pending') {
+    return 'bg-amber-50 text-amber-700'
+  }
+
+  if (status === 'failed' || status === 'expired') {
+    return 'bg-red-50 text-red-700'
+  }
+
+  return 'bg-gray-100 text-gray-600'
 }
 
 function getNextStatus(status?: string) {
@@ -259,9 +278,13 @@ export default function OrdersPage() {
     : []
   const selectedNextStatus = getNextStatus(selectedOrder?.status)
 
+  if (isLoading) {
+    return <OrdersPageSkeleton />
+  }
+
   return (
-    <main className="min-h-full bg-gray-50 p-4 sm:p-6 lg:p-7">
-      <div className="mx-auto max-w-7xl">
+    <main className="min-h-full min-w-0 bg-gray-50 p-4 sm:p-6 lg:p-7">
+      <div className="mx-auto min-w-0 max-w-7xl">
         <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="mb-2 text-sm font-medium text-blue-600">Operations / Orders</p>
@@ -300,7 +323,7 @@ export default function OrdersPage() {
           </div>
         </div>
 
-        <section className="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+        <section className="min-w-0 rounded-3xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
           <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Order Monitor</h2>
@@ -612,6 +635,9 @@ export default function OrdersPage() {
                   <p className="mt-2 text-base font-semibold uppercase text-gray-900">
                     {selectedOrder.payment ?? '-'}
                   </p>
+                  <span className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold uppercase ${paymentStatusClass(selectedOrder.paymentStatus)}`}>
+                    {selectedOrder.paymentStatus ?? 'unpaid'}
+                  </span>
                 </div>
                 <div className="rounded-3xl border border-gray-100 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">

@@ -7,6 +7,7 @@ import type { Customer, ServiceType, PaymentMethod } from '@/types'
 import { SERVICES, formatRupiah } from '@/lib/data'
 import SelectCustomerModal from '@/components/orders/SelectCustomerModal'
 import ReceiptGenerator, { ReceiptHandle } from '@/components/ReceiptGenerator'
+import QrisPayment from '@/components/payment/QrisPayment'
 
 function normalizePhoneNumber(phone: string) {
   const digitsOnly = phone.replace(/\D/g, '')
@@ -96,33 +97,32 @@ export default function NewOrderPage() {
       let activeCustomer = selectedCustomer
       const normalizedPhone = normalizePhoneNumber(customerPhone.trim())
 
-if (!activeCustomer) {
-  const createCustomerRes = await fetch('/api/customers', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      name: customerName.trim(),
-      phone: normalizedPhone,
-      status: 'regular',
-    }),
-  })
+      if (!activeCustomer) {
+        const createCustomerRes = await fetch('/api/customers', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: customerName.trim(),
+            phone: normalizedPhone,
+            status: 'regular',
+          }),
+        })
 
-  const customerPayload = await createCustomerRes.json()
-  console.log('create customer payload:', customerPayload)
+        const customerPayload = await createCustomerRes.json()
 
-  if (!createCustomerRes.ok) {
-    throw new Error(
-      customerPayload?.detail ||
-      customerPayload?.error ||
-      'Failed to create customer'
-    )
-  }
+        if (!createCustomerRes.ok) {
+          throw new Error(
+            customerPayload?.detail ||
+            customerPayload?.error ||
+            'Failed to create customer'
+          )
+        }
 
-  activeCustomer = customerPayload
-  setSelectedCustomer(customerPayload)
-}
+        activeCustomer = customerPayload
+        setSelectedCustomer(customerPayload)
+      }
 
       if (!activeCustomer) {
         throw new Error('Customer tidak valid.')
@@ -189,11 +189,13 @@ if (!activeCustomer) {
     }
 
     if (!imageDataUrl) {
-      const msg =
-        `Halo *${activeCustomer.name}* 👋%0A` +
-        `💰 *Total: ${formatRupiah(order.total)}*%0A` +
-        `Terima kasih telah menggunakan layanan kami ✨`
-      window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank', 'noopener,noreferrer')
+      const msg = new URLSearchParams({
+        text:
+          `Halo *${activeCustomer.name}*\n` +
+          `Total: *${formatRupiah(order.total)}*\n` +
+          'Terima kasih telah menggunakan layanan kami.',
+      })
+      window.open(`https://wa.me/${cleanPhone}?${msg.toString()}`, '_blank', 'noopener,noreferrer')
       return
     }
 
@@ -223,30 +225,32 @@ if (!activeCustomer) {
         new ClipboardItem({ 'image/png': blob })
       ])
 
-      const msg =
-        `Halo *${activeCustomer.name}* 👋%0A` +
-        `%0A` +
-        `Struk sudah disalin ke clipboard.%0A` +
-        `Silakan *paste (Ctrl+V)* gambar di sini 👇%0A` +
-        `%0A` +
-        `💰 *Total: ${formatRupiah(order.total)}*%0A` +
-        `📅 *Estimasi: ${
-          order.deliveryDate
-            ? new Date(order.deliveryDate).toLocaleDateString('id-ID')
-            : '-'
-        }*`
+      const msg = new URLSearchParams({
+        text:
+          `Halo *${activeCustomer.name}*\n\n` +
+          'Struk sudah disalin ke clipboard.\n' +
+          'Silakan paste (Ctrl+V) gambar di chat ini.\n\n' +
+          `Total: *${formatRupiah(order.total)}*\n` +
+          `Estimasi: *${
+            order.deliveryDate
+              ? new Date(order.deliveryDate).toLocaleDateString('id-ID')
+              : '-'
+          }*`,
+      })
 
-      alert('📋 Struk berhasil disalin!\nSetelah WhatsApp terbuka, tekan Ctrl+V untuk paste gambar.')
+      alert('Struk berhasil disalin.\nSetelah WhatsApp terbuka, tekan Ctrl+V untuk paste gambar.')
 
       setTimeout(() => {
-        window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank', 'noopener,noreferrer')
+        window.open(`https://wa.me/${cleanPhone}?${msg.toString()}`, '_blank', 'noopener,noreferrer')
       }, 300)
     } catch {
-      const msg =
-        `Halo *${activeCustomer.name}* 👋%0A` +
-        `💰 *Total: ${formatRupiah(order.total)}*%0A` +
-        `Terima kasih telah menggunakan layanan kami ✨`
-      window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank', 'noopener,noreferrer')
+      const msg = new URLSearchParams({
+        text:
+          `Halo *${activeCustomer.name}*\n` +
+          `Total: *${formatRupiah(order.total)}*\n` +
+          'Terima kasih telah menggunakan layanan kami.',
+      })
+      window.open(`https://wa.me/${cleanPhone}?${msg.toString()}`, '_blank', 'noopener,noreferrer')
     }
   }
 
@@ -268,7 +272,7 @@ if (!activeCustomer) {
 
   return (
     <>
-      <div className="px-4 py-4 sm:px-6 sm:py-6 lg:px-7 lg:py-7 max-w-[1100px] mx-auto">
+      <div className="mx-auto min-w-0 max-w-[1100px] px-4 py-4 sm:px-6 sm:py-6 lg:px-7 lg:py-7">
         <div className="flex items-center justify-between mb-5 sm:mb-7">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">New Order</h1>
         </div>
@@ -388,7 +392,7 @@ if (!activeCustomer) {
             <div className="bg-white rounded-xl border border-gray-100 p-4 sm:p-5">
               <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-5">
                 <h2 className="flex items-center gap-2 text-[15px] font-semibold text-blue-700">
-                  <Image src="/icons/services.svg" alt="Services" width={25} height={25} />
+                  <Image src="/icons/services.svg" alt="Services" width={20} height={20} />
                   Select Services
                 </h2>
 
@@ -419,7 +423,7 @@ if (!activeCustomer) {
                     >
                       {isSelected && (
                         <div className="absolute top-3 right-3 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
-                          <span className="text-white text-[10px]">✓</span>
+                          <span className="text-white text-[10px]">OK</span>
                         </div>
                       )}
 
@@ -452,7 +456,7 @@ if (!activeCustomer) {
                             onClick={() => updateQty(service.id, -0.5)}
                             className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 text-sm"
                           >
-                            −
+                            -
                           </button>
                           <span className="text-sm font-medium w-8 text-center">{qty}</span>
                           <button
@@ -580,6 +584,15 @@ if (!activeCustomer) {
                 Save as Draft
               </button>
             </div>
+
+            {currentOrder?.payment === 'qris' ? (
+              <QrisPayment orderId={currentOrder.id} amount={currentOrder.total} />
+            ) : payment === 'qris' ? (
+              <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-4 text-xs leading-5 text-blue-700">
+                QRIS dinamis akan muncul setelah order berhasil dibuat, karena Xendit
+                membutuhkan ID order sebagai referensi pembayaran.
+              </div>
+            ) : null}
 
             <div className="bg-orange-50 border border-orange-100 rounded-xl p-4">
               <div className="flex items-start gap-2">

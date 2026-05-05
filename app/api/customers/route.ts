@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { requireApiSession } from "@/lib/auth/server";
 
 function normalizePhoneNumber(phone: string) {
   const digitsOnly = phone.replace(/\D/g, "");
@@ -17,6 +18,12 @@ function normalizePhoneNumber(phone: string) {
 
 export async function GET() {
   try {
+    const session = await requireApiSession();
+
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const customers = await prisma.customer.findMany({
       include: {
         _count: {
@@ -55,6 +62,12 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const session = await requireApiSession();
+
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
 
     const name = body.name?.trim();

@@ -7,6 +7,8 @@ export interface Customer {
   phone: string;
   status: string;
   totalOrders: number;
+  joinDate?: string;
+  totalSpent?: number;
   avatar?: string;
   avatarColor?: string;
 }

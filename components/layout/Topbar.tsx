@@ -184,8 +184,8 @@ export default function Topbar({
       : `${unreadCount} order perlu perhatian`
 
   return (
-    <header className="sticky top-0 z-40 h-16 border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
-      <div className="flex h-full items-center justify-between gap-4 px-4 sm:px-6">
+    <header className="sticky top-0 z-40 h-16 max-w-full border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+      <div className="flex h-full min-w-0 items-center justify-between gap-2 px-3 sm:gap-4 sm:px-6">
         <div className="flex min-w-0 flex-1 items-center">
           <button
             type="button"
@@ -197,7 +197,7 @@ export default function Topbar({
           </button>
 
           {showSearch ? (
-            <div className="relative w-full max-w-xl">
+            <div className="relative hidden w-full max-w-xl min-w-0 sm:block">
               <Search
                 size={16}
                 className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
@@ -225,7 +225,7 @@ export default function Topbar({
           )}
         </div>
 
-        <div className="flex shrink-0 items-center gap-3 sm:gap-5">
+        <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-5">
           <div className="relative" ref={notificationRef}>
             <button
               type="button"
@@ -244,7 +244,7 @@ export default function Topbar({
             </button>
 
             {isNotificationOpen ? (
-              <div className="absolute right-0 top-14 z-50 w-[22rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.16)]">
+              <div className="fixed left-3 right-3 top-20 z-50 overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.16)] sm:absolute sm:left-auto sm:right-0 sm:top-14 sm:w-[22rem] sm:max-w-[calc(100vw-2rem)]">
                 <div className="border-b border-gray-100 px-4 py-3">
                   <div className="flex items-center justify-between gap-3">
                     <div>

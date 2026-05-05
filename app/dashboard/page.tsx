@@ -56,7 +56,7 @@ export default function DashboardPage() {
   })
 
   return (
-    <main className="flex h-full flex-col overflow-hidden bg-gray-50 p-4 sm:p-6 lg:p-7">
+    <main className="flex min-h-full min-w-0 flex-col bg-gray-50 p-4 sm:p-6 lg:p-7">
       <div className="mb-6 flex shrink-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="mb-2 text-sm font-medium text-blue-600">Operations / Dashboard</p>
@@ -97,7 +97,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <div className="flex-1 mt-4 min-h-0 overflow-y-auto">
+      <div className="mt-4 min-h-0 flex-1">
         {stats ? (
           <RecentOrders
             orders={orders}

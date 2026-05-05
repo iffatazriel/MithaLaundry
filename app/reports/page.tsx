@@ -9,17 +9,22 @@ import ReportOverviewStats from '@/components/reports/ReportOverviewStats';
 import RevenueGrowthChart from '@/components/reports/RevenueGrowthChart';
 import ServicePopularity from '@/components/reports/ServicePopularity';
 import HighValueOrdersTable from '@/components/reports/HighValueOrderTable';
+import { ReportsPageSkeleton } from '@/components/skeletons/PageSkeletons';
 
 export default function ReportsPage() {
   const router = useRouter();
-  const { reportData, period, setPeriod, maxRevenue } = useReports();
+  const { reportData, loading, period, setPeriod, maxRevenue } = useReports();
 
   const handleExportPDF = () => {
     router.push(`/reports/print?period=${period}`);
   };
 
+  if (loading) {
+    return <ReportsPageSkeleton />;
+  }
+
   return (
-    <main className="flex-1 min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+    <main className="min-h-screen min-w-0 flex-1 bg-gray-50 p-4 sm:p-6 lg:p-8">
       <ReportsHeader
         onExport={handleExportPDF}
         period={period}
@@ -32,8 +37,8 @@ export default function ReportsPage() {
         comparisonLabel={reportData.comparisonLabel}
       />
       
-      <div className="mb-8 grid gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-2">
+      <div className="mb-8 grid min-w-0 gap-6 xl:grid-cols-3">
+        <div className="min-w-0 xl:col-span-2">
           <RevenueGrowthChart 
             data={reportData.chartData} 
             maxRevenue={maxRevenue}

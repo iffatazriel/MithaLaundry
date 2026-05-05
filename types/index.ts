@@ -1,8 +1,10 @@
-export type OrderStatus = 'SORTING' | 'WASHING' | 'IRONING' | 'READY' | 'COMPLETED'
+export type OrderStatus = 'SORTING' | 'WASHING' | 'IRONING' | 'READY' | 'COMPLETED' | 'CANCELLED'
 
 export type ServiceType = 'cuci-setrika' | 'setrika' | 'cuci-sepatu' | 'bedcover'
 
 export type PaymentMethod = 'cash' | 'qris'
+
+export type PaymentStatus = 'unpaid' | 'pending' | 'paid' | 'failed' | 'expired'
 
 export type DashboardPeriod = 'today' | 'week' | 'month' | 'year'
 
@@ -35,7 +37,12 @@ export interface Order {
   totalAmount: number
   status: OrderStatus
   
+  payment?: PaymentMethod
   paymentMethod: PaymentMethod
+  paymentStatus?: PaymentStatus
+  paymentProvider?: string | null
+  paidAt?: string | null
+  xenditReferenceId?: string | null
   estimatedCompletion: string
   deliveryDate: string
   createdAt: string
@@ -58,6 +65,7 @@ export interface DashboardStats {
     washing: number
     ironing: number
     ready: number
+    cancelled?: number
   }
 }
 
