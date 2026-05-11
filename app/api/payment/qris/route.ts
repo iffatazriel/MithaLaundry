@@ -1,17 +1,21 @@
 import { NextResponse } from "next/server"
 import { requireApiSession } from "@/lib/auth/server"
 import { prisma } from "@/lib/prisma"
+import {
+  getMidtransAuthHeader,
+  getMidtransSnapBaseUrl,
+  type MidtransSnapResponse,
+} from "@/lib/payment/midtrans"
 
 export const runtime = "nodejs"
 
-type XenditQrResponse = {
-  id?: string
-  reference_id?: string
-  qr_string?: string
-  status?: string
-  message?: string
-  errors?: unknown
-  error_code?: string
+type MidtransPaymentCache = {
+  midtransOrderId: string | null
+  midtransTransactionId: string | null
+  midtransQrString: string | null
+  midtransQrCodeUrl: string | null
+  midtransSnapToken: string | null
+  midtransRedirectUrl: string | null
 }
 
 export async function POST(req: Request) {
@@ -22,9 +26,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    if (!process.env.XENDIT_SECRET_KEY) {
+    const serverKey = process.env.MIDTRANS_SERVER_KEY
+    const clientKey = process.env.MIDTRANS_CLIENT_KEY
+
+    if (!serverKey) {
       return NextResponse.json(
-        { message: "XENDIT_SECRET_KEY belum dikonfigurasi." },
+        { message: "MIDTRANS_SERVER_KEY belum dikonfigurasi." },
+        { status: 500 }
+      )
+    }
+
+    if (!clientKey) {
+      return NextResponse.json(
+        { message: "MIDTRANS_CLIENT_KEY belum dikonfigurasi." },
         { status: 500 }
       )
     }
@@ -40,6 +54,9 @@ export async function POST(req: Request) {
 
     const order = await prisma.order.findUnique({
       where: { id: orderId },
+      include: {
+        customer: true,
+      },
     })
 
     if (!order) {
@@ -62,74 +79,105 @@ export async function POST(req: Request) {
 
     const amount = Number(order.total)
 
-    if (!Number.isInteger(amount) || amount < 1500) {
+    if (!Number.isInteger(amount) || amount <= 0) {
       return NextResponse.json(
-        { message: "Nominal QRIS minimal Rp 1.500." },
+        { message: "Nominal QRIS tidak valid." },
         { status: 400 }
       )
     }
 
-    if (order.xenditQrString) {
+    const [paymentCache] = await prisma.$queryRaw<MidtransPaymentCache[]>`
+      SELECT
+        "midtransOrderId",
+        "midtransTransactionId",
+        "midtransQrString",
+        "midtransQrCodeUrl",
+        "midtransSnapToken",
+        "midtransRedirectUrl"
+      FROM "Order"
+      WHERE "id" = ${order.id}
+      LIMIT 1
+    `
+
+    if (paymentCache?.midtransSnapToken && paymentCache.midtransRedirectUrl) {
       return NextResponse.json({
-        id: order.xenditQrId,
-        reference_id: order.xenditReferenceId,
-        qr_string: order.xenditQrString,
-        status: order.paymentStatus === "unpaid" ? "ACTIVE" : order.paymentStatus.toUpperCase(),
+        id: paymentCache.midtransTransactionId,
+        reference_id: paymentCache.midtransOrderId,
+        order_id: paymentCache.midtransOrderId,
+        token: paymentCache.midtransSnapToken,
+        redirect_url: paymentCache.midtransRedirectUrl,
+        client_key: clientKey,
+        snap_script_url: `${getMidtransSnapBaseUrl()}/snap/snap.js`,
+        qr_string: paymentCache.midtransQrString,
+        qr_code_url: paymentCache.midtransQrCodeUrl,
+        status: order.paymentStatus === "unpaid" ? "pending" : order.paymentStatus,
       })
     }
 
-    const referenceId = order.xenditReferenceId ?? `ORDER-${order.id}`
+    const midtransOrderId = paymentCache?.midtransOrderId ?? `ML-${order.id}`
     const payload = {
-      reference_id: referenceId,
-      type: "DYNAMIC",
-      currency: "IDR",
-      amount,
+      transaction_details: {
+        order_id: midtransOrderId,
+        gross_amount: amount,
+      },
+      customer_details: {
+        first_name: order.customer.name,
+        email: order.customer.email ?? undefined,
+        phone: order.customer.phone,
+      },
+      custom_field1: order.id,
     }
 
-    const response = await fetch("https://api.xendit.co/qr_codes", {
+    const response = await fetch(`${getMidtransSnapBaseUrl()}/snap/v1/transactions`, {
       method: "POST",
       headers: {
-        Authorization:
-          "Basic " +
-          Buffer.from(`${process.env.XENDIT_SECRET_KEY}:`).toString("base64"),
+        Accept: "application/json",
+        Authorization: getMidtransAuthHeader(serverKey),
         "Content-Type": "application/json",
-        "api-version": "2022-07-31",
       },
       body: JSON.stringify(payload),
     })
 
-    const data = (await response.json()) as XenditQrResponse
+    const data = (await response.json()) as MidtransSnapResponse
 
     if (!response.ok) {
       return NextResponse.json(
         {
-          message: data.message || "Gagal membuat QRIS",
-          error_code: data.error_code,
-          errors: data.errors || data,
+          message: data.status_message || "Gagal membuat Snap Midtrans",
+          error_code: data.status_code,
+          errors: data.validation_messages ?? data.error_messages ?? data,
         },
         { status: response.status }
       )
     }
 
-    if (!data.qr_string) {
+    if (!data.token || !data.redirect_url) {
       return NextResponse.json(
-        { message: "Xendit tidak mengembalikan QR string." },
+        { message: "Midtrans tidak mengembalikan token Snap." },
         { status: 502 }
       )
     }
 
-    await prisma.order.update({
-      where: { id: order.id },
-      data: {
-        paymentStatus: "pending",
-        paymentProvider: "xendit",
-        xenditReferenceId: data.reference_id ?? referenceId,
-        xenditQrId: data.id ?? null,
-        xenditQrString: data.qr_string,
-      },
-    })
+    await prisma.$executeRaw`
+      UPDATE "Order"
+      SET
+        "paymentStatus" = 'pending',
+        "paymentProvider" = 'midtrans',
+        "midtransOrderId" = ${midtransOrderId},
+        "midtransSnapToken" = ${data.token},
+        "midtransRedirectUrl" = ${data.redirect_url}
+      WHERE "id" = ${order.id}
+    `
 
-    return NextResponse.json(data)
+    return NextResponse.json({
+      ...data,
+      id: data.token,
+      reference_id: midtransOrderId,
+      order_id: midtransOrderId,
+      client_key: clientKey,
+      snap_script_url: `${getMidtransSnapBaseUrl()}/snap/snap.js`,
+      status: "pending",
+    })
   } catch (error) {
     console.error("Create QRIS error:", error)
 

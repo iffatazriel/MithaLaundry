@@ -1,0 +1,3 @@
+ALTER TABLE "Order"
+ADD COLUMN IF NOT EXISTS "midtransSnapToken" TEXT,
+ADD COLUMN IF NOT EXISTS "midtransRedirectUrl" TEXT;

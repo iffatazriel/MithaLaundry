@@ -1,7 +1,17 @@
 import { prisma } from '@/lib/prisma'
 import { requireApiSession } from '@/lib/auth/server'
-import { NextResponse } from 'next/server'
 import { validateCreateOrderPayload } from '@/lib/orders/validation'
+import { createLogger } from '@/lib/logger'
+import {
+  successResponse,
+  createdResponse,
+  unauthorizedResponse,
+  notFoundResponse,
+  validationErrorResponse,
+  errorResponse,
+} from '@/lib/api-response'
+
+const logger = createLogger('orders-api')
 
 // GET Orders
 export async function GET() {
@@ -9,28 +19,32 @@ export async function GET() {
     const session = await requireApiSession()
 
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      logger.warn('Unauthorized GET /api/orders attempt')
+      return unauthorizedResponse()
     }
+
+    logger.info('Fetching all orders')
 
     const orders = await prisma.order.findMany({
       include: {
         customer: true,
+        statusHistory: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
       },
       orderBy: {
         createdAt: 'desc',
       },
     })
 
-    return NextResponse.json(orders)
+    logger.info({ count: orders.length }, 'Orders fetched successfully')
+    return successResponse(orders, `${orders.length} orders retrieved`)
   } catch (error) {
-    console.error(error)
-    return NextResponse.json(
-      { error: "Failed fetch orders" },
-      { status: 500 }
-    )
+    logger.error(error, 'Failed to fetch orders')
+    return errorResponse('Gagal mengambil data order', 500)
   }
 }
-
 
 // POST Orders
 export async function POST(req: Request) {
@@ -38,39 +52,45 @@ export async function POST(req: Request) {
     const session = await requireApiSession()
 
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      logger.warn('Unauthorized POST /api/orders attempt')
+      return unauthorizedResponse()
     }
 
     const body = await req.json()
+    logger.debug({ body }, 'Creating new order')
+
     const validation = validateCreateOrderPayload(body)
 
     if (!validation.ok) {
-      return NextResponse.json(
-        { error: 'Invalid order payload', details: validation.errors },
-        { status: 400 }
-      )
+      logger.warn({ errors: validation.errors }, 'Order validation failed')
+      return validationErrorResponse(validation.errors)
     }
 
     const customer = await prisma.customer.findUnique({
       where: { id: validation.data.customerId },
-      select: { id: true },
+      select: { id: true, name: true },
     })
 
     if (!customer) {
-      return NextResponse.json(
-        { error: 'Customer tidak ditemukan.' },
-        { status: 404 }
+      logger.warn(
+        { customerId: validation.data.customerId },
+        'Customer not found'
       )
+      return notFoundResponse('Customer')
     }
 
     const order = await prisma.order.create({
       data: {
         customerId: validation.data.customerId,
         status: 'sorting',
+        service: validation.data.services.map((service) => service.name).join(', '),
+        price: validation.data.services[0]?.price ?? 0,
+        totalItems: validation.data.itemCount ?? validation.data.services.length,
+        totalPrice: validation.data.total,
         services: validation.data.services,
         payment: validation.data.payment,
         paymentStatus: validation.data.payment === 'qris' ? 'unpaid' : 'paid',
-        paymentProvider: validation.data.payment === 'qris' ? 'xendit' : 'cash',
+        paymentProvider: validation.data.payment === 'qris' ? 'midtrans' : 'cash',
         paidAt: validation.data.payment === 'qris' ? null : new Date(),
         itemCount: validation.data.itemCount,
         deliveryDate: validation.data.deliveryDate,
@@ -78,32 +98,33 @@ export async function POST(req: Request) {
         subtotal: validation.data.subtotal,
         expressFee: validation.data.expressFee,
         total: validation.data.total,
-        statusHistory: {
-          create: {
-            toStatus: 'sorting',
-            note: 'Order dibuat',
-            changedBy: session.email,
-          },
-        },
+      },
+      include: {
+        customer: true,
       },
     })
 
-    return NextResponse.json(order)
-
-  } catch (error) {
-    console.error("Create order error:", error)
-
-    return NextResponse.json(
-      {
-        error: "Failed create order",
-        detail:
-          process.env.NODE_ENV === 'production'
-            ? undefined
-            : error instanceof Error
-              ? error.message
-              : String(error),
+    await prisma.orderStatusHistory.create({
+      data: {
+        orderId: order.id,
+        toStatus: 'sorting',
+        note: 'Order dibuat',
+        changedBy: session.email,
       },
-      { status: 500 }
+    })
+
+    logger.info(
+      { orderId: order.id, customerId: customer.id, total: order.total },
+      'Order created successfully'
+    )
+
+    return createdResponse(order, 'Order berhasil dibuat')
+  } catch (error) {
+    logger.error(error, 'Failed to create order')
+    return errorResponse(
+      'Gagal membuat order',
+      500,
+      error instanceof Error ? error.message : String(error)
     )
   }
 }

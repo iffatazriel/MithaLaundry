@@ -10,6 +10,7 @@ import {
   ReactNode
 } from 'react';
 import { Customer, CustomerFilters, CustomerStats } from '@/lib/types/customers';
+import { unwrapApiData } from '@/lib/api-client';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -65,7 +66,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
     try {
       const res = await fetch('/api/customers');
       if (!res.ok) throw new Error('Failed to fetch customers');
-      const data: Customer[] = await res.json();
+      const data = unwrapApiData<Customer[]>(await res.json(), []);
       setAllCustomers(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');

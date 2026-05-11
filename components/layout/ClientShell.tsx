@@ -25,7 +25,11 @@ export default function ClientShell({ children, user }: ClientShellProps) {
   const pathname = usePathname()
   const currentUser = use(user)
 
-  if (pathname === '/login' || pathname?.startsWith('/reports/print')) {
+  if (
+    pathname === '/' ||
+    pathname === '/login' ||
+    pathname?.startsWith('/reports/print')
+  ) {
     return <>{children}</>
   }
 
@@ -37,7 +41,7 @@ export default function ClientShell({ children, user }: ClientShellProps) {
         onMobileClose={() => setIsMobileSidebarOpen(false)}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col lg:pl-0">
+      <div className="flex min-w-0 flex-1 flex-col lg:pl-64">
         <Topbar
           user={
             currentUser

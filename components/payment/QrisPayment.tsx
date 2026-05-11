@@ -1,21 +1,72 @@
 'use client'
 
 import { useState } from 'react'
-import { QRCodeCanvas } from 'qrcode.react'
-import { Loader2, QrCode, RefreshCcw } from 'lucide-react'
+import { ExternalLink, Loader2, RefreshCcw } from 'lucide-react'
 import { formatRupiah } from '@/lib/data'
 
 type QrisResponse = {
+  token?: string
+  redirect_url?: string
+  client_key?: string
+  snap_script_url?: string
   qr_string?: string
   status?: string
   message?: string
   error_code?: string
   qr_code_id?: string
   reference_id?: string
-  xendit_status?: number
+  gateway_status?: number
 }
 
 const canSimulatePayment = process.env.NODE_ENV !== 'production'
+
+declare global {
+  interface Window {
+    snap?: {
+      pay: (
+        token: string,
+        options?: {
+          onSuccess?: (result: unknown) => void
+          onPending?: (result: unknown) => void
+          onError?: (result: unknown) => void
+          onClose?: () => void
+        }
+      ) => void
+    }
+  }
+}
+
+function loadMidtransSnap(scriptUrl: string, clientKey: string) {
+  return new Promise<void>((resolve, reject) => {
+    const existingScript = document.querySelector<HTMLScriptElement>(
+      'script[data-midtrans-snap="true"]'
+    )
+
+    if (
+      existingScript &&
+      existingScript.src === scriptUrl &&
+      existingScript.dataset.clientKey === clientKey &&
+      window.snap
+    ) {
+      resolve()
+      return
+    }
+
+    if (existingScript) {
+      existingScript.remove()
+    }
+
+    const script = document.createElement('script')
+    script.src = scriptUrl
+    script.async = true
+    script.dataset.midtransSnap = 'true'
+    script.dataset.clientKey = clientKey
+    script.setAttribute('data-client-key', clientKey)
+    script.onload = () => resolve()
+    script.onerror = () => reject(new Error('Gagal memuat Midtrans Snap.'))
+    document.body.appendChild(script)
+  })
+}
 
 export default function QrisPayment({
   orderId,
@@ -24,7 +75,7 @@ export default function QrisPayment({
   orderId: string
   amount: number
 }) {
-  const [qrString, setQrString] = useState('')
+  const [redirectUrl, setRedirectUrl] = useState('')
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -49,16 +100,32 @@ export default function QrisPayment({
         throw new Error(data.message || data.error_code || 'Gagal membuat QRIS')
       }
 
-      if (!data.qr_string) {
-        throw new Error('QRIS berhasil dibuat, tetapi QR string tidak ditemukan.')
+      if (!data.token) {
+        throw new Error('Snap berhasil dibuat, tetapi token tidak ditemukan.')
       }
 
-      setQrString(data.qr_string)
+      if (!data.client_key || !data.snap_script_url) {
+        throw new Error('Konfigurasi Snap belum lengkap.')
+      }
+
+      setRedirectUrl(data.redirect_url ?? '')
       setStatus(data.status ?? 'ACTIVE')
+      await loadMidtransSnap(data.snap_script_url, data.client_key)
+
+      if (!window.snap) {
+        throw new Error('Midtrans Snap belum siap.')
+      }
+
+      window.snap.pay(data.token, {
+        onSuccess: () => setStatus('paid'),
+        onPending: () => setStatus('pending'),
+        onError: () => setStatus('failed'),
+        onClose: () => setStatus((currentStatus) => currentStatus || 'pending'),
+      })
     } catch (caughtError) {
-      setQrString('')
+      setRedirectUrl('')
       setStatus('')
-      setError(caughtError instanceof Error ? caughtError.message : 'Gagal membuat QRIS')
+      setError(caughtError instanceof Error ? caughtError.message : 'Gagal membuat Snap payment')
     } finally {
       setLoading(false)
     }
@@ -84,7 +151,7 @@ export default function QrisPayment({
           data.message || data.error_code || 'Gagal mensimulasikan pembayaran',
           data.qr_code_id ? `QR: ${data.qr_code_id}` : '',
           data.reference_id ? `Ref: ${data.reference_id}` : '',
-          data.xendit_status ? `Xendit HTTP ${data.xendit_status}` : '',
+          data.gateway_status ? `Gateway HTTP ${data.gateway_status}` : '',
         ].filter(Boolean)
 
         throw new Error(details.join(' | '))
@@ -106,12 +173,12 @@ export default function QrisPayment({
     <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-4 sm:p-5">
       <div className="mb-4 flex items-start gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white">
-          <QrCode className="h-5 w-5" />
+          <ExternalLink className="h-5 w-5" />
         </div>
         <div className="min-w-0">
-          <h3 className="text-sm font-bold text-gray-900">QRIS Dinamis</h3>
+          <h3 className="text-sm font-bold text-gray-900">Midtrans Snap</h3>
           <p className="mt-1 text-xs leading-5 text-gray-600">
-            Buat QRIS untuk order #{orderId.slice(-6).toUpperCase()} senilai{' '}
+            Buka halaman pembayaran Snap untuk order #{orderId.slice(-6).toUpperCase()} senilai{' '}
             <span className="font-semibold text-gray-900">{formatRupiah(amount)}</span>.
           </p>
         </div>
@@ -126,17 +193,17 @@ export default function QrisPayment({
         {loading ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            Membuat QRIS...
+            Membuat Snap...
           </>
-        ) : qrString ? (
+        ) : redirectUrl ? (
           <>
             <RefreshCcw className="h-4 w-4" />
-            Buat Ulang QRIS
+            Buka Ulang Snap
           </>
         ) : (
           <>
-            <QrCode className="h-4 w-4" />
-            Buat QRIS
+            <ExternalLink className="h-4 w-4" />
+            Bayar via Snap
           </>
         )}
       </button>
@@ -147,18 +214,22 @@ export default function QrisPayment({
         </p>
       ) : null}
 
-      {qrString ? (
+      {redirectUrl ? (
         <div className="mt-4 rounded-xl border border-gray-100 bg-white p-4 text-center shadow-sm">
-          <p className="mb-3 text-sm font-semibold text-gray-900">Scan QRIS Pembayaran</p>
-          <div className="inline-flex rounded-lg bg-white p-2">
-            <QRCodeCanvas value={qrString} size={220} includeMargin />
-          </div>
+          <p className="mb-3 text-sm font-semibold text-gray-900">Halaman Pembayaran Snap</p>
+          <a
+            href={redirectUrl}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-500"
+          >
+            <ExternalLink className="h-4 w-4" />
+            Buka Midtrans
+          </a>
           <div className="mt-3 space-y-1 text-xs text-gray-500">
             <p>
               Nominal:{' '}
               <span className="font-semibold text-gray-800">{formatRupiah(amount)}</span>
             </p>
-            {status ? <p>Status QR: {status}</p> : null}
+            {status ? <p>Status: {status}</p> : null}
           </div>
           {canSimulatePayment ? (
             <button

@@ -8,6 +8,7 @@ import { SERVICES, formatRupiah } from '@/lib/data'
 import SelectCustomerModal from '@/components/orders/SelectCustomerModal'
 import ReceiptGenerator, { ReceiptHandle } from '@/components/ReceiptGenerator'
 import QrisPayment from '@/components/payment/QrisPayment'
+import { unwrapApiData } from '@/lib/api-client'
 
 function normalizePhoneNumber(phone: string) {
   const digitsOnly = phone.replace(/\D/g, '')
@@ -120,8 +121,8 @@ export default function NewOrderPage() {
           )
         }
 
-        activeCustomer = customerPayload
-        setSelectedCustomer(customerPayload)
+        activeCustomer = unwrapApiData<Customer>(customerPayload, customerPayload as Customer)
+        setSelectedCustomer(activeCustomer)
       }
 
       if (!activeCustomer) {
@@ -153,12 +154,13 @@ export default function NewOrderPage() {
         body: JSON.stringify(order),
       })
 
-      const data = await res.json()
+      const orderPayload = await res.json()
 
       if (!res.ok) {
-        throw new Error(data?.error || 'Failed to create order')
+        throw new Error(orderPayload?.error || 'Failed to create order')
       }
 
+      const data = unwrapApiData<{ id: string }>(orderPayload, { id: '' })
       const savedOrder = { ...order, id: data.id }
       setCurrentOrder(savedOrder)
 
@@ -520,7 +522,7 @@ export default function NewOrderPage() {
                     }`}
                   >
                     <Image
-                      src={method === 'cash' ? '/icons/margin.svg' : '/icons/Icon.svg'}
+                      src={method === 'cash' ? '/icons/Margin.svg' : '/icons/Icon.svg'}
                       alt={method}
                       width={20}
                       height={20}
@@ -589,7 +591,7 @@ export default function NewOrderPage() {
               <QrisPayment orderId={currentOrder.id} amount={currentOrder.total} />
             ) : payment === 'qris' ? (
               <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-4 text-xs leading-5 text-blue-700">
-                QRIS dinamis akan muncul setelah order berhasil dibuat, karena Xendit
+                Link pembayaran Midtrans Snap akan muncul setelah order berhasil dibuat, karena Midtrans
                 membutuhkan ID order sebagai referensi pembayaran.
               </div>
             ) : null}

@@ -1,7 +1,8 @@
-import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth/server'
+import SplashScreen from '@/components/SplashScreen'
 
 export default async function HomePage() {
   const session = await getSession()
-  redirect(session ? '/dashboard' : '/login')
+
+  return <SplashScreen redirectTo={session ? '/dashboard' : '/login'} />
 }

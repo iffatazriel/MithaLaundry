@@ -14,6 +14,7 @@ import {
 import StatusBadge from '@/components/ui/StatusBadge'
 import { OrdersPageSkeleton } from '@/components/skeletons/PageSkeletons'
 import type { Order } from '@/types'
+import { unwrapApiData } from '@/lib/api-client'
 
 const STATUS_OPTIONS = [
   { value: 'all', label: 'Semua Status' },
@@ -141,7 +142,7 @@ export default function OrdersPage() {
           throw new Error('Failed to fetch orders')
         }
 
-        const data: LocalOrder[] = await response.json()
+        const data = unwrapApiData<LocalOrder[]>(await response.json(), [])
 
         if (!isMounted) {
           return

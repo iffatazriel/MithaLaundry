@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/auth/session-core'
 
-const PUBLIC_PATHS = ['/login']
+const PUBLIC_PATHS = ['/', '/login']
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -30,6 +30,6 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
+    '/((?!api|_next/static|_next/image|icons|sw.js|offline.html|manifest.webmanifest|favicon.ico|sitemap.xml|robots.txt).*)',
   ],
 }

@@ -1,6 +1,15 @@
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
 import { requireApiSession } from "@/lib/auth/server";
+import { createLogger } from "@/lib/logger";
+import {
+  successResponse,
+  createdResponse,
+  unauthorizedResponse,
+  validationErrorResponse,
+  errorResponse,
+} from "@/lib/api-response";
+
+const logger = createLogger("customers-api");
 
 function normalizePhoneNumber(phone: string) {
   const digitsOnly = phone.replace(/\D/g, "");
@@ -21,8 +30,11 @@ export async function GET() {
     const session = await requireApiSession();
 
     if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      logger.warn("Unauthorized GET /api/customers attempt");
+      return unauthorizedResponse();
     }
+
+    logger.info("Fetching all customers");
 
     const customers = await prisma.customer.findMany({
       include: {
@@ -46,17 +58,11 @@ export async function GET() {
       totalOrders: customer._count.orders,
     }));
 
-    return NextResponse.json(formattedCustomers);
+    logger.info({ count: customers.length }, "Customers fetched successfully");
+    return successResponse(formattedCustomers, `${customers.length} customers retrieved`);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("GET /api/customers error:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to fetch customers",
-        detail: message,
-      },
-      { status: 500 }
-    );
+    logger.error(error, "Failed to fetch customers");
+    return errorResponse("Gagal mengambil data pelanggan", 500);
   }
 }
 
@@ -65,28 +71,31 @@ export async function POST(req: Request) {
     const session = await requireApiSession();
 
     if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      logger.warn("Unauthorized POST /api/customers attempt");
+      return unauthorizedResponse();
     }
 
     const body = await req.json();
+    logger.debug({ body }, "Creating new customer");
 
     const name = body.name?.trim();
     const phone = normalizePhoneNumber(body.phone?.trim() ?? "");
     const email = body.email?.trim() || null;
     const status = body.status?.trim() || "regular";
 
+    const errors: string[] = [];
+
     if (!name) {
-      return NextResponse.json(
-        { error: "Name is required" },
-        { status: 400 }
-      );
+      errors.push("Nama pelanggan wajib diisi");
     }
 
     if (!phone) {
-      return NextResponse.json(
-        { error: "Phone is required" },
-        { status: 400 }
-      );
+      errors.push("Nomor telepon wajib diisi");
+    }
+
+    if (errors.length > 0) {
+      logger.warn({ errors }, "Customer validation failed");
+      return validationErrorResponse(errors);
     }
 
     const existingCustomer = await prisma.customer.findFirst({
@@ -96,7 +105,11 @@ export async function POST(req: Request) {
     });
 
     if (existingCustomer) {
-      return NextResponse.json(existingCustomer, { status: 200 });
+      logger.info(
+        { customerId: existingCustomer.id, phone },
+        "Customer already exists"
+      );
+      return successResponse(existingCustomer, "Pelanggan sudah terdaftar");
     }
 
     const customer = await prisma.customer.create({
@@ -108,17 +121,13 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json(customer, { status: 201 });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("POST /api/customers error:", error);
-
-    return NextResponse.json(
-      {
-        error: "Failed to create customer",
-        detail: message,
-      },
-      { status: 500 }
+    logger.info(
+      { customerId: customer.id, name, phone },
+      "Customer created successfully"
     );
+    return createdResponse(customer, "Pelanggan berhasil dibuat");
+  } catch (error: unknown) {
+    logger.error(error, "Failed to create customer");
+    return errorResponse("Gagal membuat pelanggan", 500);
   }
 }

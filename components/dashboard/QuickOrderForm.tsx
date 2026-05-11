@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
@@ -22,7 +22,7 @@ export default function QuickOrderForm() {
     <div className="bg-white rounded-xl border border-gray-100 p-5">
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-[15px] font-semibold text-gray-900">Quick New Order</h2>
-        <Link href="/orders/new">
+        <Link href="/order">
           <Plus size={20} className="text-blue-700 cursor-pointer" />
         </Link>
       </div>
@@ -42,7 +42,7 @@ export default function QuickOrderForm() {
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">▼</span>
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">â–¼</span>
         </div>
       </div>
 
@@ -96,19 +96,19 @@ export default function QuickOrderForm() {
             >
               <span className="inline-flex items-center text-xl">
                 {method === 'cash' ? (
-                    <Image 
-                      src="/icons/margin.svg" 
+                    <Image
+                      src="/icons/Margin.svg"
                       className="w-5 h-auto" // Pastikan ada h-auto
-                      width={24} 
-                      height={24} 
-                      alt="Margin icon" 
+                      width={24}
+                      height={24}
+                      alt="Margin icon"
                     />
                 ) : method === 'qris' ? (
-                    <Image 
-                      src="/icons/Icon.svg" 
-                      alt="QRIS Icon" 
-                      width={20} 
-                      height={20} 
+                    <Image
+                      src="/icons/Icon.svg"
+                      alt="QRIS Icon"
+                      width={20}
+                      height={20}
                     />
                 ) : null}
               </span>
@@ -118,9 +118,9 @@ export default function QuickOrderForm() {
         </div>
       </div>
 
-      <Link href="/orders/new">
+      <Link href="/order">
         <button className="w-full bg-blue-800 hover:bg-blue-900 text-white font-semibold rounded-lg py-2.5 text-sm transition-colors">
-          Create Order →
+          Create Order â†’
         </button>
       </Link>
     </div>

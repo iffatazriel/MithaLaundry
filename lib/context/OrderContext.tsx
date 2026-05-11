@@ -10,6 +10,7 @@ import {
 } from 'react';
 import type { ServiceType, PaymentMethod } from '@/types';
 import { SERVICES } from '@/lib/data';
+import { unwrapApiData } from '@/lib/api-client';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -125,7 +126,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     fetch('/api/customers')
       .then(res => res.json())
-      .then(data => setCustomers(data))
+      .then(data => setCustomers(unwrapApiData<SelectedCustomer[]>(data, [])))
       .catch(console.error)
       .finally(() => setCustomersLoading(false));
   }, []);
@@ -188,7 +189,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
     if (!res.ok) throw new Error('Gagal membuat order. Coba lagi.');
 
-    const data = await res.json();
+    const data = unwrapApiData<{ id: string }>(await res.json(), { id: '' });
     const saved: SavedOrder = { ...payload, id: data.id };
     setCurrentOrder(saved);
     return saved;

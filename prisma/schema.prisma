@@ -33,6 +33,11 @@ model Order {
 
   status String @default("sorting")
 
+  service    String
+  price      Int
+  totalItems Int
+  totalPrice Int
+
   services          Json
   payment           String
   paymentStatus     String    @default("unpaid")
@@ -41,6 +46,12 @@ model Order {
   xenditQrId        String?
   xenditQrString    String?
   xenditPaymentId   String?
+  midtransOrderId   String?   @unique
+  midtransTransactionId String?
+  midtransQrString  String?
+  midtransQrCodeUrl String?
+  midtransSnapToken String?
+  midtransRedirectUrl String?
   paidAt            DateTime?
   itemCount         Int?
   deliveryDate      DateTime?
@@ -66,4 +77,38 @@ model OrderStatusHistory {
   createdAt  DateTime @default(now())
 
   @@index([orderId, createdAt])
+}
+
+model InventoryItem {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  category    String   // e.g., "detergent", "fabric_softener", "equipment"
+  quantity    Int      @default(0)
+  unit        String   // e.g., "kg", "liter", "pcs"
+  minStock    Int      @default(5)
+  maxStock    Int      @default(100)
+  price       Int      // cost per unit in IDR
+  supplier    String?
+  lastRestocked DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  movements InventoryMovement[]
+
+  @@index([category])
+  @@index([quantity])
+}
+
+model InventoryMovement {
+  id        String   @id @default(cuid())
+  itemId    String
+  item      InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  type      String   // "in" (restock), "out" (usage), "adjustment"
+  quantity  Int
+  note      String?
+  createdBy String?
+  createdAt DateTime @default(now())
+
+  @@index([itemId, createdAt])
 }

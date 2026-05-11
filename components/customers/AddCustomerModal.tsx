@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react';
 import { X, UserPlus, Loader2, Mail, Phone, User } from 'lucide-react';
 import { Customer } from '@/lib/types/customers';
+import { unwrapApiData } from '@/lib/api-client';
 
 interface AddCustomerModalProps {
   isOpen: boolean;
@@ -62,7 +63,7 @@ export default function AddCustomerModal({
         throw new Error('Failed to create customer');
       }
 
-      const newCustomer = await response.json();
+      const newCustomer = unwrapApiData<Customer>(await response.json(), {} as Customer);
       const createdCustomer: Customer = {
         ...newCustomer,
         avatar: newCustomer.name

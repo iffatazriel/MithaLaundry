@@ -64,13 +64,13 @@ export default function Sidebar({ user, isMobileOpen, onMobileClose }: SidebarPr
       )}
 
       <aside
-        className={`fixed left-0 top-0 z-50 flex h-[100dvh] w-[18rem] max-w-[calc(100vw-1rem)] flex-col border-r border-gray-100 bg-white shadow-2xl transition-transform duration-300 lg:sticky lg:max-w-none lg:shadow-none
+        className={`fixed left-0 top-0 z-50 flex h-[100dvh] w-[18rem] max-w-[calc(100vw-1rem)] flex-col overflow-hidden border-r border-gray-100 bg-white shadow-2xl transition-transform duration-300 lg:fixed lg:max-w-none lg:shadow-none
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           ${isCollapsed ? 'lg:w-20' : 'lg:w-64'}
         `}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-6 border-b border-gray-100">
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 py-5">
           {/* Logo - Hilang saat collapsed */}
           <div className={`flex min-w-0 items-center gap-3 ${isCollapsed ? 'lg:hidden' : ''}`}>
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100">
@@ -122,7 +122,7 @@ export default function Sidebar({ user, isMobileOpen, onMobileClose }: SidebarPr
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
+        <nav className="flex-1 space-y-1 overflow-hidden px-3 py-4">
           {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
             const isActive = pathname === href || pathname.startsWith(href + '/');
             return (
@@ -130,7 +130,7 @@ export default function Sidebar({ user, isMobileOpen, onMobileClose }: SidebarPr
                 key={href}
                 href={href}
                 onClick={onMobileClose} // Tutup otomatis di mobile saat klik menu
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all group ${
+                className={`flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm transition-all group ${
                   isActive
                     ? 'bg-blue-50 text-blue-700 font-medium'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
@@ -147,10 +147,10 @@ export default function Sidebar({ user, isMobileOpen, onMobileClose }: SidebarPr
         </nav>
 
         {/* Bottom Section */}
-        <div className="px-3 py-6 border-t border-gray-100 space-y-1">
+        <div className="shrink-0 space-y-1 border-t border-gray-100 px-3 py-4">
           <div className={`${isCollapsed ? 'lg:hidden' : ''}`}>
           {user && (
-            <div className="mx-1 mb-4 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+            <div className="mx-1 mb-3 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
               <p className="truncate text-sm font-semibold text-gray-900">{user.name}</p>
               <p className="mt-1 truncate text-xs text-gray-500">{user.email}</p>
             </div>
@@ -160,7 +160,7 @@ export default function Sidebar({ user, isMobileOpen, onMobileClose }: SidebarPr
           <Link
             href="/settings"
             onClick={onMobileClose}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all ${
+            className={`flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm text-gray-600 transition-all hover:bg-gray-50 hover:text-gray-900 ${
               isCollapsed ? 'lg:justify-center' : ''
             }`}
           >
