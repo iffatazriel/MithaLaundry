@@ -19,18 +19,22 @@ export interface AppNotification {
 
 const ACTIVE_STATUSES = ['sorting', 'washing', 'ironing', 'ready']
 
-function formatOrderCode(orderId: string) {
-  return `#${orderId.slice(-6).toUpperCase()}`
-}
-
-function buildNotification(order: {
+type NotificationOrder = {
   id: string
   status: string
   isExpress: boolean
   createdAt: Date
   deliveryDate: Date | null
-  customer: { name: string }
-}): AppNotification | null {
+  customer: {
+    name: string
+  }
+}
+
+function formatOrderCode(orderId: string) {
+  return `#${orderId.slice(-6).toUpperCase()}`
+}
+
+function buildNotification(order: NotificationOrder): AppNotification | null {
   const now = new Date()
   const createdAt = new Date(order.createdAt)
   const deliveryDate = order.deliveryDate ? new Date(order.deliveryDate) : null
@@ -102,7 +106,7 @@ function buildNotification(order: {
 }
 
 export async function getTopbarNotifications(limit = 8) {
-  const orders = await prisma.order.findMany({
+  const orders: NotificationOrder[] = await prisma.order.findMany({
     where: {
       OR: [
         { status: { in: ACTIVE_STATUSES } },
@@ -126,7 +130,7 @@ export async function getTopbarNotifications(limit = 8) {
 
   const notifications = orders
     .map(buildNotification)
-    .filter((item): item is AppNotification => item !== null)
+    .filter((item: AppNotification | null): item is AppNotification => item !== null)
     .sort(
       (left, right) =>
         right.priority - left.priority ||
