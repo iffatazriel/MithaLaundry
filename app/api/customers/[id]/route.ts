@@ -2,6 +2,17 @@ import { prisma } from "@/lib/prisma";
 import { requireApiSession } from "@/lib/auth/server";
 import { NextResponse } from "next/server";
 
+type CustomerWithOrderCount = {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string;
+  status: string;
+  _count: {
+    orders: number;
+  };
+};
+
 export async function GET() {
   try {
     const session = await requireApiSession();
@@ -10,7 +21,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const customers = await prisma.customer.findMany({
+    const customers: CustomerWithOrderCount[] = await prisma.customer.findMany({
       include: {
         _count: {
           select: {

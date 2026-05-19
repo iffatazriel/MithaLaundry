@@ -11,6 +11,17 @@ import {
 
 const logger = createLogger("customers-api");
 
+type CustomerWithOrderCount = {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string;
+  status: string;
+  _count: {
+    orders: number;
+  };
+};
+
 function normalizePhoneNumber(phone: string) {
   const digitsOnly = phone.replace(/\D/g, "");
 
@@ -36,7 +47,7 @@ export async function GET() {
 
     logger.info("Fetching all customers");
 
-    const customers = await prisma.customer.findMany({
+    const customers: CustomerWithOrderCount[] = await prisma.customer.findMany({
       include: {
         _count: {
           select: {
