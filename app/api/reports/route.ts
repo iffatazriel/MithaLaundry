@@ -3,7 +3,15 @@ import { NextResponse } from 'next/server'
 import type { ReportData, ReportPeriod } from '@/lib/types/report'
 import { requireApiSession } from '@/lib/auth/server'
 
-type OrderWithCustomer = Awaited<ReturnType<typeof prisma.order.findMany>>[number] & {
+type OrderWithCustomer = {
+  id: string
+  customerId: string
+  status: string
+  services: unknown
+  total: number
+  createdAt: Date
+  deliveryDate: Date | null
+  isExpress: boolean
   customer: {
     id: string
     name: string
@@ -227,7 +235,7 @@ function buildHighValueOrders(orders: OrderWithCustomer[]): ReportData['highValu
         customerInitials: (order.customer?.name ?? 'WC')
           .split(' ')
           .slice(0, 2)
-          .map((part) => part.charAt(0).toUpperCase())
+          .map((part: string) => part.charAt(0).toUpperCase())
           .join(''),
         customerColor: order.isExpress ? 'bg-orange-500' : 'bg-blue-500',
         serviceType: serviceLabel || 'Laundry Service',
