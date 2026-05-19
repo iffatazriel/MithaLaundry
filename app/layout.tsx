@@ -59,14 +59,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/icons/pwa-192.png', type: 'image/png', sizes: '192x192' },
-      { url: '/icons/pwa-512.png', type: 'image/png', sizes: '512x512' },
       { url: '/icons/Background.svg' },
       { url: '/icons/Icon.svg', type: 'image/svg+xml' },
       { url: '/icons/Background.svg', type: 'image/svg+xml', sizes: 'any' },
     ],
-    shortcut: '/favicon.ico',
-    apple: [{ url: '/icons/pwa-192.png', type: 'image/png', sizes: '192x192' }],
+    shortcut: '/icons/screen.png',
+    apple: [{ url: '/icons/screen.png', type: 'image/png', sizes: '192x192' }],
   },
   appleWebApp: {
     capable: true,

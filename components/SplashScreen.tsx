@@ -1,20 +1,80 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useSyncExternalStore } from 'react'
 import Image from 'next/image'
 
 type SplashScreenProps = {
   redirectTo: string
+  pwaOnly?: boolean
 }
 
-export default function SplashScreen({ redirectTo }: SplashScreenProps) {
+function isPwaDisplayMode() {
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.matchMedia('(display-mode: fullscreen)').matches ||
+    ('standalone' in navigator && navigator.standalone === true)
+  )
+}
+
+function subscribeToPwaDisplayMode(onStoreChange: () => void) {
+  const mediaQueries = [
+    window.matchMedia('(display-mode: standalone)'),
+    window.matchMedia('(display-mode: fullscreen)'),
+  ]
+
+  mediaQueries.forEach((mediaQuery) => {
+    mediaQuery.addEventListener('change', onStoreChange)
+  })
+
+  return () => {
+    mediaQueries.forEach((mediaQuery) => {
+      mediaQuery.removeEventListener('change', onStoreChange)
+    })
+  }
+}
+
+function getPwaDisplayModeSnapshot() {
+  return isPwaDisplayMode()
+}
+
+function getServerPwaDisplayModeSnapshot() {
+  return false
+}
+
+export default function SplashScreen({
+  redirectTo,
+  pwaOnly = false,
+}: SplashScreenProps) {
+  const isPwa = useSyncExternalStore(
+    subscribeToPwaDisplayMode,
+    getPwaDisplayModeSnapshot,
+    getServerPwaDisplayModeSnapshot
+  )
+  const shouldShowSplash = !pwaOnly || isPwa
+
   useEffect(() => {
+    if (!pwaOnly || isPwa) {
+      return
+    }
+
+    window.location.replace(redirectTo)
+  }, [isPwa, pwaOnly, redirectTo])
+
+  useEffect(() => {
+    if (!shouldShowSplash) {
+      return
+    }
+
     const timer = window.setTimeout(() => {
       window.location.replace(redirectTo)
     }, 1800)
 
     return () => window.clearTimeout(timer)
-  }, [redirectTo])
+  }, [redirectTo, shouldShowSplash])
+
+  if (!shouldShowSplash) {
+    return null
+  }
 
   return (
     <main className="relative flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-hidden bg-white">

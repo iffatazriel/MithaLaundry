@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
-import { UserPlus, ChevronRight, X, Receipt } from 'lucide-react'
+import { UserPlus, ChevronRight, X, Receipt, Loader2, MessageCircle } from 'lucide-react'
 import type { Customer, ServiceType, PaymentMethod } from '@/types'
 import { SERVICES, formatRupiah } from '@/lib/data'
 import SelectCustomerModal from '@/components/orders/SelectCustomerModal'
@@ -22,6 +22,14 @@ function normalizePhoneNumber(phone: string) {
   }
 
   return `62${digitsOnly.replace(/^0+/, '')}`
+}
+
+function formatReceiptDate(date: string) {
+  if (!date) {
+    return '-'
+  }
+
+  return new Date(date).toLocaleDateString('id-ID')
 }
 
 type OrderService = {
@@ -45,6 +53,35 @@ type DraftOrder = {
 
 type SavedOrder = DraftOrder & {
   id: string
+  customer: Customer
+}
+
+function buildReceiptMessage(order: SavedOrder, customer: Customer) {
+  const serviceLines = order.services
+    .map((service, index) => (
+      `${index + 1}. ${service.name} (${service.quantity}) - ${formatRupiah(service.subtotal)}`
+    ))
+    .join('\n')
+
+  return [
+    `Halo *${customer.name}*, berikut struk laundry Anda.`,
+    '',
+    `*Order:* #${order.id.toString().slice(-6)}`,
+    `*Customer:* ${customer.name}`,
+    `*No. HP:* ${customer.phone}`,
+    `*Tanggal:* ${new Date().toLocaleDateString('id-ID')}`,
+    `*Estimasi:* ${formatReceiptDate(order.deliveryDate)}`,
+    `*Metode Pembayaran:* ${order.payment.toUpperCase()}`,
+    '',
+    '*Layanan:*',
+    serviceLines,
+    '',
+    `Subtotal: ${formatRupiah(order.subtotal)}`,
+    `Express Fee: ${formatRupiah(order.expressFee)}`,
+    `*TOTAL: ${formatRupiah(order.total)}*`,
+    '',
+    'Struk gambar juga sudah disiapkan. Terima kasih telah menggunakan layanan kami.',
+  ].join('\n')
 }
 
 export default function NewOrderPage() {
@@ -62,8 +99,11 @@ export default function NewOrderPage() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [currentOrder, setCurrentOrder] = useState<SavedOrder | null>(null)
   const [showReceipt, setShowReceipt] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
 
   const receiptRef = useRef<ReceiptHandle>(null)
+  const qrisSectionRef = useRef<HTMLDivElement>(null)
 
   const selectedServices = SERVICES.filter((s) => serviceQtys[s.id] > 0)
 
@@ -79,6 +119,10 @@ export default function NewOrderPage() {
   }
 
   const handleSubmit = async () => {
+    if (isSubmitting) {
+      return
+    }
+
     if (!customerName.trim()) {
       alert('Nama customer wajib diisi.')
       return
@@ -93,6 +137,9 @@ export default function NewOrderPage() {
       alert('Pilih minimal satu layanan.')
       return
     }
+
+    setIsSubmitting(true)
+    setSubmitError('')
 
     try {
       let activeCustomer = selectedCustomer
@@ -146,8 +193,6 @@ export default function NewOrderPage() {
         total: grandTotal,
       }
 
-      const imageDataUrl = await receiptRef.current?.generateImage()
-
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -157,28 +202,75 @@ export default function NewOrderPage() {
       const orderPayload = await res.json()
 
       if (!res.ok) {
-        throw new Error(orderPayload?.error || 'Failed to create order')
+        const details = Array.isArray(orderPayload?.details)
+          ? orderPayload.details.join(' ')
+          : orderPayload?.details
+
+        throw new Error(
+          details ||
+          orderPayload?.error ||
+          orderPayload?.message ||
+          'Failed to create order'
+        )
       }
 
       const data = unwrapApiData<{ id: string }>(orderPayload, { id: '' })
-      const savedOrder = { ...order, id: data.id }
+      const savedOrder = { ...order, id: data.id, customer: activeCustomer }
       setCurrentOrder(savedOrder)
 
-      await sendWhatsappWithImage(savedOrder, imageDataUrl ?? null, activeCustomer)
+      if (savedOrder.payment === 'qris') {
+        window.setTimeout(() => {
+          qrisSectionRef.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          })
+        }, 100)
+      }
     } catch (error) {
       console.error('Submit error:', error)
-      alert(error instanceof Error ? error.message : 'Gagal membuat order. Coba lagi.')
+      const message = error instanceof Error ? error.message : 'Gagal membuat order. Coba lagi.'
+      setSubmitError(message)
+      alert(message)
+    } finally {
+      setIsSubmitting(false)
     }
+  }
+
+  const handleSendWhatsapp = async () => {
+    if (!currentOrder) {
+      alert('Buat order terlebih dahulu.')
+      return
+    }
+
+    const whatsappWindow = window.open('', '_blank')
+    const imageDataUrl = await receiptRef.current?.generateImage()
+    await sendWhatsappWithImage(
+      currentOrder,
+      imageDataUrl ?? null,
+      currentOrder.customer,
+      whatsappWindow
+    )
   }
 
   const sendWhatsappWithImage = async (
     order: SavedOrder,
     imageDataUrl: string | null,
-    customerOverride?: Customer | null
+    customerOverride?: Customer | null,
+    whatsappWindow?: Window | null
   ) => {
-    const activeCustomer = customerOverride ?? selectedCustomer
+    const openWhatsapp = (url: string) => {
+      if (whatsappWindow && !whatsappWindow.closed) {
+        whatsappWindow.location.href = url
+        return
+      }
+
+      window.open(url, '_blank', 'noopener,noreferrer')
+    }
+
+    const activeCustomer = customerOverride ?? order.customer ?? selectedCustomer
 
     if (!activeCustomer) {
+      whatsappWindow?.close()
       alert('Customer tidak ditemukan.')
       return
     }
@@ -186,73 +278,51 @@ export default function NewOrderPage() {
     const cleanPhone = normalizePhoneNumber(activeCustomer.phone ?? customerPhone)
 
     if (!cleanPhone) {
+      whatsappWindow?.close()
       alert('Nomor WhatsApp customer tidak valid.')
       return
     }
 
+    const msg = new URLSearchParams({
+      text: buildReceiptMessage(order, activeCustomer),
+    })
+    const whatsappUrl = `https://wa.me/${cleanPhone}?${msg.toString()}`
+
     if (!imageDataUrl) {
-      const msg = new URLSearchParams({
-        text:
-          `Halo *${activeCustomer.name}*\n` +
-          `Total: *${formatRupiah(order.total)}*\n` +
-          'Terima kasih telah menggunakan layanan kami.',
-      })
-      window.open(`https://wa.me/${cleanPhone}?${msg.toString()}`, '_blank', 'noopener,noreferrer')
+      openWhatsapp(whatsappUrl)
       return
     }
 
     const byteString = atob(imageDataUrl.split(',')[1])
     const ab = new ArrayBuffer(byteString.length)
     const ia = new Uint8Array(ab)
-    for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i)
+
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i)
+    }
 
     const blob = new Blob([ab], { type: 'image/png' })
-    const file = new File([blob], `receipt-${order.id || Date.now()}.png`, { type: 'image/png' })
-
-    if (navigator.canShare?.({ files: [file] })) {
-      try {
-        await navigator.share({
-          files: [file],
-          title: 'Struk Laundry',
-          text: `Halo ${activeCustomer.name}, berikut struk laundry Anda.`,
-        })
-        return
-      } catch {
-        return
-      }
-    }
 
     try {
       await navigator.clipboard.write([
         new ClipboardItem({ 'image/png': blob })
       ])
 
-      const msg = new URLSearchParams({
-        text:
-          `Halo *${activeCustomer.name}*\n\n` +
-          'Struk sudah disalin ke clipboard.\n' +
-          'Silakan paste (Ctrl+V) gambar di chat ini.\n\n' +
-          `Total: *${formatRupiah(order.total)}*\n` +
-          `Estimasi: *${
-            order.deliveryDate
-              ? new Date(order.deliveryDate).toLocaleDateString('id-ID')
-              : '-'
-          }*`,
-      })
-
-      alert('Struk berhasil disalin.\nSetelah WhatsApp terbuka, tekan Ctrl+V untuk paste gambar.')
+      alert('Struk gambar berhasil disalin.\nSetelah WhatsApp terbuka, paste gambar struk di chat.')
 
       setTimeout(() => {
-        window.open(`https://wa.me/${cleanPhone}?${msg.toString()}`, '_blank', 'noopener,noreferrer')
+        openWhatsapp(whatsappUrl)
       }, 300)
     } catch {
-      const msg = new URLSearchParams({
-        text:
-          `Halo *${activeCustomer.name}*\n` +
-          `Total: *${formatRupiah(order.total)}*\n` +
-          'Terima kasih telah menggunakan layanan kami.',
-      })
-      window.open(`https://wa.me/${cleanPhone}?${msg.toString()}`, '_blank', 'noopener,noreferrer')
+      const downloadUrl = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = `receipt-${order.id || Date.now()}.png`
+      link.click()
+      URL.revokeObjectURL(downloadUrl)
+
+      alert('Browser tidak mengizinkan salin gambar otomatis. File struk sudah diunduh, lalu lampirkan di WhatsApp.')
+      openWhatsapp(whatsappUrl)
     }
   }
 
@@ -279,7 +349,7 @@ export default function NewOrderPage() {
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">New Order</h1>
         </div>
 
-        {currentOrder && selectedCustomer && (
+        {currentOrder && (
           <div
             className={`
               sticky top-3 sm:top-4 z-20 mb-5 sm:mb-7 p-4 sm:p-5 rounded-2xl border shadow-lg backdrop-blur-sm
@@ -311,6 +381,7 @@ export default function NewOrderPage() {
               </div>
 
               <button
+                type="button"
                 onClick={() => setShowReceipt(true)}
                 className="w-full sm:w-auto shrink-0 px-4 sm:px-5 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 ease-out active:scale-95 relative overflow-hidden"
               >
@@ -455,6 +526,7 @@ export default function NewOrderPage() {
 
                         <div className="flex items-center gap-2 shrink-0">
                           <button
+                            type="button"
                             onClick={() => updateQty(service.id, -0.5)}
                             className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 text-sm"
                           >
@@ -462,6 +534,7 @@ export default function NewOrderPage() {
                           </button>
                           <span className="text-sm font-medium w-8 text-center">{qty}</span>
                           <button
+                            type="button"
                             onClick={() => updateQty(service.id, 0.5)}
                             className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 text-sm"
                           >
@@ -513,6 +586,7 @@ export default function NewOrderPage() {
               <div className="grid grid-cols-2 gap-2">
                 {(['cash', 'qris'] as const).map((method) => (
                   <button
+                    type="button"
                     key={method}
                     onClick={() => setPayment(method)}
                     className={`flex flex-col items-center gap-1.5 py-3.5 rounded-xl text-sm font-medium transition-colors border-2 ${
@@ -575,26 +649,57 @@ export default function NewOrderPage() {
               </div>
 
               <button
+                type="button"
                 onClick={handleSubmit}
-                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg py-3 text-sm flex items-center justify-center gap-2 mb-2 transition-colors"
+                disabled={isSubmitting}
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg py-3 text-sm flex items-center justify-center gap-2 mb-2 transition-colors disabled:cursor-not-allowed disabled:bg-gray-300"
               >
-                <ChevronRight size={14} />
-                Create Order & WhatsApp
+                {isSubmitting ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    Creating Order...
+                  </>
+                ) : (
+                  <>
+                    <ChevronRight size={14} />
+                    Create Order
+                  </>
+                )}
               </button>
 
-              <button className="w-full text-gray-500 hover:text-gray-700 text-sm py-2 transition-colors">
+              {submitError ? (
+                <p className="mb-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs leading-5 text-red-600">
+                  {submitError}
+                </p>
+              ) : null}
+
+              <button
+                type="button"
+                onClick={handleSendWhatsapp}
+                disabled={!currentOrder}
+                className="w-full text-gray-500 hover:text-gray-700 text-sm py-2 transition-colors disabled:cursor-not-allowed disabled:text-gray-300"
+              >
+                <span className="inline-flex items-center justify-center gap-1.5">
+                  <MessageCircle size={14} />
+                  WhatsApp Receipt
+                </span>
+              </button>
+
+              <button type="button" className="w-full text-gray-500 hover:text-gray-700 text-sm py-2 transition-colors">
                 Save as Draft
               </button>
             </div>
 
-            {currentOrder?.payment === 'qris' ? (
-              <QrisPayment orderId={currentOrder.id} amount={currentOrder.total} />
-            ) : payment === 'qris' ? (
-              <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-4 text-xs leading-5 text-blue-700">
+            <div ref={qrisSectionRef}>
+              {currentOrder?.payment === 'qris' ? (
+                <QrisPayment orderId={currentOrder.id} amount={currentOrder.total} />
+              ) : payment === 'qris' ? (
+                <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-4 text-xs leading-5 text-blue-700">
                 Link pembayaran Midtrans Snap akan muncul setelah order berhasil dibuat, karena Midtrans
                 membutuhkan ID order sebagai referensi pembayaran.
-              </div>
-            ) : null}
+                </div>
+              ) : null}
+            </div>
 
             <div className="bg-orange-50 border border-orange-100 rounded-xl p-4">
               <div className="flex items-start gap-2">
@@ -619,7 +724,7 @@ export default function NewOrderPage() {
       <div className="fixed -left-[9999px] -top-[9999px] pointer-events-none opacity-0">
         <ReceiptGenerator
           ref={receiptRef}
-          order={{
+          order={currentOrder ?? {
             id: null,
             services: selectedServices.map((s) => ({
               name: s.name,
@@ -635,7 +740,7 @@ export default function NewOrderPage() {
             expressFee: expressCharge,
             total: grandTotal,
           }}
-          customer={selectedCustomer ?? { name: '', phone: '' }}
+          customer={currentOrder?.customer ?? selectedCustomer ?? { name: '', phone: '' }}
         />
       </div>
 
@@ -645,7 +750,7 @@ export default function NewOrderPage() {
         onSelect={(customer) => setSelectedCustomer(customer)}
       />
 
-      {showReceipt && currentOrder && selectedCustomer && (
+      {showReceipt && currentOrder && (
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4"
           onClick={(e) => {
@@ -666,7 +771,7 @@ export default function NewOrderPage() {
               </button>
             </div>
 
-            <ReceiptGenerator order={currentOrder} customer={selectedCustomer} />
+            <ReceiptGenerator order={currentOrder} customer={currentOrder.customer} />
           </div>
         </div>
       )}
