@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import type { Prisma } from "@prisma/client"
 import { requireApiSession } from "@/lib/auth/server"
 import { prisma } from "@/lib/prisma"
 import { isOrderStatus } from "@/lib/orders/validation"
@@ -40,7 +41,7 @@ export async function PATCH(
     return NextResponse.json(existingOrder)
   }
 
-  const order = await prisma.$transaction(async (tx) => {
+  const order = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const updatedOrder = await tx.order.update({
       where: { id },
       data: {
