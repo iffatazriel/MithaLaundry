@@ -60,16 +60,110 @@ const ReceiptGenerator = forwardRef<ReceiptHandle, ReceiptProps>(
       },
     }))
 
+    const generateReceiptCanvas = async () => {
+      if (!receiptRef.current) return null
+      return html2canvas(receiptRef.current, canvasOptions)
+    }
+
     const handleDownload = async () => {
-      if (!receiptRef.current) return
       try {
-        const canvas = await html2canvas(receiptRef.current, canvasOptions)
-        const link     = document.createElement('a')
-        link.download  = `receipt-${order.id || Date.now()}.png`
-        link.href      = canvas.toDataURL('image/png')
+        const canvas = await generateReceiptCanvas()
+
+        if (!canvas) return
+
+        const blob = await new Promise<Blob | null>((resolve) => {
+          canvas.toBlob(resolve, 'image/png')
+        })
+
+        if (!blob) {
+          window.open(canvas.toDataURL('image/png'), '_blank')
+          return
+        }
+
+        const downloadUrl = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.download = `receipt-${order.id || Date.now()}.png`
+        link.href = downloadUrl
+        link.rel = 'noopener'
+        document.body.appendChild(link)
         link.click()
+        link.remove()
+
+        window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000)
       } catch (error) {
         console.error('Error downloading receipt:', error)
+      }
+    }
+
+    const handlePrint = async () => {
+      try {
+        const canvas = await generateReceiptCanvas()
+
+        if (!canvas) return
+
+        const imageUrl = canvas.toDataURL('image/png')
+        const printWindow = window.open('', '_blank')
+
+        if (!printWindow) {
+          const currentBody = document.body.innerHTML
+          document.body.innerHTML = `<img src="${imageUrl}" alt="Receipt" style="width:100%;max-width:400px;display:block;margin:0 auto;" />`
+          window.print()
+          document.body.innerHTML = currentBody
+          window.location.reload()
+          return
+        }
+
+        printWindow.document.write(`
+          <!doctype html>
+          <html>
+            <head>
+              <title>Receipt ${order.id || ''}</title>
+              <meta name="viewport" content="width=device-width, initial-scale=1" />
+              <style>
+                * { box-sizing: border-box; }
+                html, body {
+                  margin: 0;
+                  padding: 0;
+                  background: #fff;
+                }
+                body {
+                  display: flex;
+                  justify-content: center;
+                  padding: 12px;
+                }
+                img {
+                  width: 100%;
+                  max-width: 400px;
+                  height: auto;
+                  display: block;
+                }
+                @page {
+                  margin: 8mm;
+                }
+                @media print {
+                  body {
+                    padding: 0;
+                  }
+                  img {
+                    max-width: 100%;
+                  }
+                }
+              </style>
+            </head>
+            <body>
+              <img src="${imageUrl}" alt="Receipt" />
+              <script>
+                window.onload = () => {
+                  window.focus();
+                  window.print();
+                };
+              </script>
+            </body>
+          </html>
+        `)
+        printWindow.document.close()
+      } catch (error) {
+        console.error('Error printing receipt:', error)
       }
     }
 
@@ -103,7 +197,7 @@ const ReceiptGenerator = forwardRef<ReceiptHandle, ReceiptProps>(
               justifyContent:  'center',
             }}>
               <Image 
-                src="icons/Background.svg" 
+                src="/icons/Background.svg" 
                 alt="Background Icon" 
                 width={30} 
                 height={30} 
@@ -249,7 +343,7 @@ const ReceiptGenerator = forwardRef<ReceiptHandle, ReceiptProps>(
             Download PNG
           </button>
           <button
-            onClick={() => window.print()}
+            onClick={handlePrint}
             style={{
               flex:          1,
               background:    'linear-gradient(135deg, #6b7280, #4b5563)',
