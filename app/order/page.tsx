@@ -100,6 +100,7 @@ export default function NewOrderPage() {
   const [currentOrder, setCurrentOrder] = useState<SavedOrder | null>(null)
   const [showReceipt, setShowReceipt] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSendingWhatsapp, setIsSendingWhatsapp] = useState(false)
   const [submitError, setSubmitError] = useState('')
 
   const receiptRef = useRef<ReceiptHandle>(null)
@@ -242,54 +243,48 @@ export default function NewOrderPage() {
       return
     }
 
-    const whatsappWindow = window.open('', '_blank')
-    const imageDataUrl = await receiptRef.current?.generateImage()
-    await sendWhatsappWithImage(
-      currentOrder,
-      imageDataUrl ?? null,
-      currentOrder.customer,
-      whatsappWindow
-    )
-  }
-
-  const sendWhatsappWithImage = async (
-    order: SavedOrder,
-    imageDataUrl: string | null,
-    customerOverride?: Customer | null,
-    whatsappWindow?: Window | null
-  ) => {
-    const openWhatsapp = (url: string) => {
-      if (whatsappWindow && !whatsappWindow.closed) {
-        whatsappWindow.location.href = url
-        return
-      }
-
-      window.open(url, '_blank', 'noopener,noreferrer')
-    }
-
-    const activeCustomer = customerOverride ?? order.customer ?? selectedCustomer
-
-    if (!activeCustomer) {
-      whatsappWindow?.close()
-      alert('Customer tidak ditemukan.')
+    if (isSendingWhatsapp) {
       return
     }
+
+    const activeCustomer = currentOrder.customer
 
     const cleanPhone = normalizePhoneNumber(activeCustomer.phone ?? customerPhone)
 
     if (!cleanPhone) {
-      whatsappWindow?.close()
       alert('Nomor WhatsApp customer tidak valid.')
       return
     }
 
     const msg = new URLSearchParams({
-      text: buildReceiptMessage(order, activeCustomer),
+      text: buildReceiptMessage(currentOrder, activeCustomer),
     })
     const whatsappUrl = `https://wa.me/${cleanPhone}?${msg.toString()}`
 
+    const openedWindow = window.open(whatsappUrl, '_blank')
+
+    if (!openedWindow) {
+      window.location.href = whatsappUrl
+      return
+    }
+
+    setIsSendingWhatsapp(true)
+
+    try {
+      const imageDataUrl = await receiptRef.current?.generateImage()
+
+      if (!imageDataUrl) {
+        return
+      }
+
+      await prepareReceiptImage(currentOrder, imageDataUrl)
+    } finally {
+      setIsSendingWhatsapp(false)
+    }
+  }
+
+  const prepareReceiptImage = async (order: SavedOrder, imageDataUrl: string) => {
     if (!imageDataUrl) {
-      openWhatsapp(whatsappUrl)
       return
     }
 
@@ -308,11 +303,7 @@ export default function NewOrderPage() {
         new ClipboardItem({ 'image/png': blob })
       ])
 
-      alert('Struk gambar berhasil disalin.\nSetelah WhatsApp terbuka, paste gambar struk di chat.')
-
-      setTimeout(() => {
-        openWhatsapp(whatsappUrl)
-      }, 300)
+      alert('WhatsApp sudah dibuka.\nStruk gambar berhasil disalin, paste gambar struk di chat.')
     } catch {
       const downloadUrl = URL.createObjectURL(blob)
       const link = document.createElement('a')
@@ -321,8 +312,7 @@ export default function NewOrderPage() {
       link.click()
       URL.revokeObjectURL(downloadUrl)
 
-      alert('Browser tidak mengizinkan salin gambar otomatis. File struk sudah diunduh, lalu lampirkan di WhatsApp.')
-      openWhatsapp(whatsappUrl)
+      alert('WhatsApp sudah dibuka.\nBrowser tidak mengizinkan salin gambar otomatis. File struk sudah diunduh, lalu lampirkan di chat.')
     }
   }
 
@@ -676,12 +666,16 @@ export default function NewOrderPage() {
               <button
                 type="button"
                 onClick={handleSendWhatsapp}
-                disabled={!currentOrder}
+                disabled={!currentOrder || isSendingWhatsapp}
                 className="w-full text-gray-500 hover:text-gray-700 text-sm py-2 transition-colors disabled:cursor-not-allowed disabled:text-gray-300"
               >
                 <span className="inline-flex items-center justify-center gap-1.5">
-                  <MessageCircle size={14} />
-                  WhatsApp Receipt
+                  {isSendingWhatsapp ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <MessageCircle size={14} />
+                  )}
+                  {isSendingWhatsapp ? 'Menyiapkan Struk...' : 'WhatsApp Receipt'}
                 </span>
               </button>
 
