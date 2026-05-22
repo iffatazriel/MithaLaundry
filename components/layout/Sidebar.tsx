@@ -75,7 +75,7 @@ export default function Sidebar({ user, isMobileOpen, onMobileClose }: SidebarPr
           <div className={`flex min-w-0 items-center gap-3 ${isCollapsed ? 'lg:hidden' : ''}`}>
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100">
               <Image
-                src="/icons/Background.svg"
+                src="/icons/screen.png"
                 alt="Mitha Laundry"
                 width={32}
                 height={32}
@@ -94,7 +94,7 @@ export default function Sidebar({ user, isMobileOpen, onMobileClose }: SidebarPr
             <div className="flex items-center gap-3">
               <div className="hidden h-10 w-10 items-center justify-center rounded-xl bg-blue-100 lg:flex">
                 <Image
-                  src="/icons/Background.svg"
+                  src="/icons/screen.png"
                   alt="Mitha Laundry"
                   width={32}
                   height={32}

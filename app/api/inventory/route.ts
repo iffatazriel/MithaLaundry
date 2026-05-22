@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { requireApiSession } from '@/lib/auth/server'
 import { createLogger } from '@/lib/logger'
@@ -7,6 +8,7 @@ import {
   unauthorizedResponse,
   validationErrorResponse,
   errorResponse,
+  conflictResponse,
 } from '@/lib/api-response'
 
 const logger = createLogger('inventory-api')
@@ -73,6 +75,22 @@ export async function POST(req: Request) {
       errors.push('Jumlah harus berupa angka positif')
     }
 
+    if (typeof body.minStock !== 'number' || body.minStock < 0) {
+      errors.push('Minimum stok harus berupa angka positif')
+    }
+
+    if (typeof body.maxStock !== 'number' || body.maxStock <= 0) {
+      errors.push('Maksimum stok harus lebih dari 0')
+    }
+
+    if (
+      typeof body.minStock === 'number' &&
+      typeof body.maxStock === 'number' &&
+      body.minStock > body.maxStock
+    ) {
+      errors.push('Minimum stok tidak boleh lebih besar dari maksimum stok')
+    }
+
     if (typeof body.price !== 'number' || body.price < 0) {
       errors.push('Harga harus berupa angka positif')
     }
@@ -89,10 +107,11 @@ export async function POST(req: Request) {
         category: body.category.trim(),
         quantity: body.quantity,
         unit: body.unit.trim(),
-        minStock: body.minStock || 5,
-        maxStock: body.maxStock || 100,
+        minStock: body.minStock,
+        maxStock: body.maxStock,
         price: body.price,
         supplier: body.supplier?.trim() || null,
+        lastRestocked: body.quantity > 0 ? new Date() : null,
       },
     })
 
@@ -102,6 +121,10 @@ export async function POST(req: Request) {
     )
     return createdResponse(item, 'Item inventory berhasil ditambahkan')
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return conflictResponse('Nama item inventory sudah digunakan')
+    }
+
     logger.error(error, 'Failed to create inventory item')
     return errorResponse('Gagal menambahkan item inventory', 500)
   }

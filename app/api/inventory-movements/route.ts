@@ -22,7 +22,10 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url)
     const itemId = searchParams.get('itemId')
-    const limit = parseInt(searchParams.get('limit') || '50')
+    const parsedLimit = parseInt(searchParams.get('limit') || '50', 10)
+    const limit = Number.isFinite(parsedLimit)
+      ? Math.min(Math.max(parsedLimit, 1), 100)
+      : 50
 
     logger.info({ itemId, limit }, 'Fetching inventory movements')
 
@@ -65,8 +68,12 @@ export async function POST(req: Request) {
       errors.push('Tipe pergerakan harus: in, out, atau adjustment')
     }
 
-    if (typeof body.quantity !== 'number' || body.quantity === 0) {
-      errors.push('Jumlah harus berupa angka dan tidak boleh 0')
+    if (typeof body.quantity !== 'number' || body.quantity < 0) {
+      errors.push('Jumlah harus berupa angka positif')
+    }
+
+    if (body.type !== 'adjustment' && body.quantity === 0) {
+      errors.push('Jumlah stok masuk/keluar tidak boleh 0')
     }
 
     if (errors.length > 0) {
@@ -81,7 +88,7 @@ export async function POST(req: Request) {
       return notFoundResponse('Item inventory')
     }
 
-    // Calculate new quantity
+    // Calculate new quantity before writing so validation happens once.
     let newQuantity = item.quantity
     if (body.type === 'in') {
       newQuantity += body.quantity
@@ -94,23 +101,26 @@ export async function POST(req: Request) {
       newQuantity = body.quantity
     }
 
-    // Create movement and update item in transaction
-    const movement = await prisma.inventoryMovement.create({
-      data: {
-        itemId: body.itemId,
-        type: body.type,
-        quantity: body.quantity,
-        note: body.note?.trim() || null,
-        createdBy: session.email,
-      },
-    })
+    const movement = await prisma.$transaction(async (tx) => {
+      const created = await tx.inventoryMovement.create({
+        data: {
+          itemId: body.itemId,
+          type: body.type,
+          quantity: body.quantity,
+          note: body.note?.trim() || null,
+          createdBy: session.email,
+        },
+      })
 
-    await prisma.inventoryItem.update({
-      where: { id: body.itemId },
-      data: {
-        quantity: newQuantity,
-        lastRestocked: body.type === 'in' ? new Date() : undefined,
-      },
+      await tx.inventoryItem.update({
+        where: { id: body.itemId },
+        data: {
+          quantity: newQuantity,
+          lastRestocked: body.type === 'in' ? new Date() : undefined,
+        },
+      })
+
+      return created
     })
 
     logger.info(

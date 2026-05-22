@@ -197,7 +197,7 @@ const ReceiptGenerator = forwardRef<ReceiptHandle, ReceiptProps>(
               justifyContent:  'center',
             }}>
               <Image 
-                src="/icons/Background.svg" 
+                src="/icons/screen.png" 
                 alt="Background Icon" 
                 width={30} 
                 height={30} 
